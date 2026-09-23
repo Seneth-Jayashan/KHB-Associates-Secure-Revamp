@@ -88,32 +88,46 @@ export default function Settings() {
     }
   };
 
-  const handlePasswordSubmit = async (e) => {
+const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    try{
-      if (passwords.newPassword !== passwords.confirmPassword) {
-        setErrorMessage("Passwords do not match!");
+
+    if (passwords.newPassword !== passwords.confirmPassword) {
+        setErrorMessage("New Password & Confirm Password do not match!");
         return;
-      }
-      const formDataToSend = new FormData();
-      formDataToSend.append("userId", userId);
-      formDataToSend.append("password", passwords.newPassword);
-      formDataToSend.append("confirmPassword", passwords.confirmPassword);
-      await axios.put("http://localhost:3001/api/customers/updatepassword", formDataToSend, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      setSuccessMsg("Password updated successfully");
-      setTimeout(() => {
-        setSuccessMsg("");
-        window.location.href="/logout";
-      }, 3000);
-    }catch (error){
-      setErrorMessage("Failed to update password");
     }
-    
-  };
+
+    try {
+        const token = localStorage.getItem("token");
+
+        await axios.put(
+            "http://localhost:3001/api/customers/updatepassword",
+            {
+                currentPassword: passwords.currentPassword,
+                password: passwords.newPassword,
+                confirmPassword: passwords.confirmPassword
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        setSuccessMsg("Password updated successfully");
+
+        setTimeout(() => {
+            setSuccessMsg("");
+            window.location.href = "/logout";
+        }, 3000);
+
+    } catch (error) {
+        setErrorMessage(
+            error.response?.data?.message ||
+            "Failed to update password"
+        );
+    }
+};
 
   useEffect(() => {
     if (passwords.newPassword && passwords.currentPassword === passwords.newPassword) {

@@ -114,23 +114,79 @@ exports.updateCustomer = async(req, res) => {
    
 };
 
-exports.updatePassword = async (req,res) => {
-    try{
-        const id = req.body.userId;
-        const {password, confirmPassword} = req.body;
+exports.updatePassword = async (req, res) => {
+    try {
+        const {
+            currentPassword,
+            password,
+            confirmPassword
+        } = req.body;
 
-        if(password !== confirmPassword){
-            return res.status(400).json({message: "Passwords do not match"});
+        // Get the authenticated customer's ID from the verified JWT
+        const id = req.user.id;
+
+        // Confirm that the authenticated user exists
+        const customer = await Customer.findOne({
+            user_id: id,
+            role: "customer"
+        });
+
+        if (!customer) {
+            return res.status(404).json({
+                message: "Customer not found"
+            });
         }
 
-        const hashedPassword = await bcrypt.hash(password,12);
-        const customer = await Customer.findOneAndUpdate({user_id: id},{password: hashedPassword},{new:true});
+        // Check that the new password and confirmation match
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                message: "Passwords do not match"
+            });
+        }
 
-        res.status(200).json({message: "Password updated Successfully!"});
-    }catch (error) {
-        res.status(500).json(error);
+        // Verify the current password
+        const isCurrentPasswordValid = await bcrypt.compare(
+            currentPassword,
+            customer.password
+        );
+
+        if (!isCurrentPasswordValid) {
+            return res.status(401).json({
+                message: "Current password is incorrect"
+            });
+        }
+
+        // Prevent reusing the current password
+        const isSamePassword = await bcrypt.compare(
+            password,
+            customer.password
+        );
+
+        if (isSamePassword) {
+            return res.status(400).json({
+                message: "New password cannot be the same as the current password"
+            });
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        customer.password = hashedPassword;
+
+        await customer.save();
+
+        return res.status(200).json({
+            message: "Password updated successfully"
+        });
+
+    } catch (error) {
+        console.error("Update password error:", error);
+
+        return res.status(500).json({
+            message: "Internal server error"
+        });
     }
-}
+};
 
 exports.updateCustomerPoints = async(req, res) => {
     try {
