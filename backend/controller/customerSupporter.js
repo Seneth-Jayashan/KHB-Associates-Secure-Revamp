@@ -38,7 +38,8 @@ exports.getCustomerSupporterByEmail = async (req, res) => {
 
         res.status(200).json(customerSupporter);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
     
 };
@@ -76,7 +77,8 @@ exports.addCustomerSupporter = async(req,res) => {
         await emailSender.sendVerificationEmail(email,token);
         res.json({ message: "Customer Supporter SignUp successfully", customerSupporter });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 }
@@ -109,7 +111,8 @@ exports.updateCustomerSupporter = async(req,res) => {
         console.log(customerSupporter);
         res.json({ message: "Inventory Manager updated successfully", customerSupporter });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 }
@@ -128,7 +131,8 @@ exports.updatePassword = async (req,res) => {
 
         res.status(200).json({message: "Password updated Successfully!"});
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 

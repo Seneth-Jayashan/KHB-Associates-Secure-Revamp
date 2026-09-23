@@ -9,36 +9,39 @@ require("dotenv").config();
 
 exports.getCustomers = async (req, res) => {
     try {
-        const customers = await Customer.find({role:'customer'}).select('-password -token');
+        const customers = await Customer.find({role:'customer'});
         res.status(200).json(customers);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 };
 
 exports.getCustomerById = async(req, res) => {
     try {
         const id = req.query.id;
-        const customer = await Customer.findOne({user_id:id, role:'customer'}).select('-password -token');
+        const customer = await Customer.findOne({user_id:id, role:'customer'});
 
         if(!customer) return res.status(404).json("User not found");
 
         res.status(200).json(customer);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 };
 
 exports.getCustomerByEmail = async (req, res) => {
     try {
         const email = req.body.email;
-        const customer = await Customer.findOne({email:email, role:'customer'}).select('-password -token');
+        const customer = await Customer.findOne({email:email, role:'customer'});
 
         if(!customer) return res.status(404).json("User not found");
 
         res.status(200).json(customer);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
     
 };
@@ -76,8 +79,8 @@ exports.addCustomer = async(req, res) => {
     
         res.status(200).json({ message: "Customer registered! Please check your email for verification." });
     }catch (error) {
-        res.status(500).json(error);
-        console.log(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 };
@@ -104,12 +107,13 @@ exports.updateCustomer = async(req, res) => {
             profilePic , 
         }
 
-        const customer = await Customer.findOneAndUpdate({user_id},updateData, {new:true}).select('-password -token');
+        const customer = await Customer.findOneAndUpdate({user_id},updateData, {new:true});
         if(!customer) return res.status(404).json("User not found");
         console.log(customer);
         res.json({ message: "Customer updated successfully", customer });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 };
@@ -128,7 +132,8 @@ exports.updatePassword = async (req,res) => {
 
         res.status(200).json({message: "Password updated Successfully!"});
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -147,7 +152,8 @@ exports.updateCustomerPoints = async(req, res) => {
 
         res.status(200).json({message: "Points updated successfully"}, customerUpdate);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 
 };
@@ -158,7 +164,8 @@ exports.deleteCustomer = async(req, res) => {
         const customer = await Customer.findOneAndDelete({user_id: id});
         res.status(200).json({message: "Customer deleted successfully!"});
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 };
 
@@ -166,12 +173,13 @@ exports.deleteCustomer = async(req, res) => {
 exports.getCustomerNameById = async(req, res) => {
     try {
         const id = req.query.id;
-        const customer = await Customer.findOne({ user_id: id, role: 'customer' }).select('-password -token');
+        const customer = await Customer.findOne({ user_id: id, role: 'customer' }).select('-password');
 
         if(!customer) return res.status(404).json("User not found");
 
         res.status(200).json(customer);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 };

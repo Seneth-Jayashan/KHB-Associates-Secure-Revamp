@@ -39,7 +39,8 @@ exports.getInventoryManagerByEmail = async (req, res) => {
 
         res.status(200).json(inventoryManager);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
     
 };
@@ -78,7 +79,8 @@ exports.addInventoryManager = async(req,res) => {
 
         res.json({ message: "InventoryManager SignUp successfully", inventoryManager });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 }
@@ -111,7 +113,8 @@ exports.updateInventoryManager = async(req,res) => {
         console.log(inventoryManager);
         res.json({ message: "Inventory Manager updated successfully", inventoryManager });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 }
@@ -130,7 +133,8 @@ exports.updatePassword = async (req,res) => {
 
         res.status(200).json({message: "Password updated Successfully!"});
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 

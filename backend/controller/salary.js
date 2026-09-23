@@ -11,7 +11,8 @@ const createOTSalary = async (req, res) => {
     const savedOTSalary = await newOTSalary.save();
     res.status(200).json(savedOTSalary);
   } catch (err) {
-    res.status(500).json(err);
+    console.error(err);
+    res.status(500).json({ message: "An internal server error occurred" });
   }
 };
 
@@ -30,7 +31,8 @@ const updateOTSalary = async (req, res) => {
     if (!updatedOTSalary) return res.status(404).json({ message: "OT and Salary entry not found." });
     res.status(200).json(updatedOTSalary);
   } catch (err) {
-    res.status(500).json(err);
+    console.error(err);
+    res.status(500).json({ message: "An internal server error occurred" });
   }
 };
 
@@ -40,7 +42,8 @@ const getAllOTSalary = async (req, res) => {
     const otSalaries = await OTSalary.find();
     res.status(200).json(otSalaries);
   } catch (err) {
-    res.status(500).json(err);
+    console.error(err);
+    res.status(500).json({ message: "An internal server error occurred" });
   }
 };
 
@@ -51,7 +54,8 @@ const deleteOTSalary = async (req, res) => {
     if (!otSalary) return res.status(404).json({ message: "OT and Salary entry not found." });
     res.status(200).json({ message: "OT and Salary entry deleted successfully." });
   } catch (err) {
-    res.status(500).json(err);
+    console.error(err);
+    res.status(500).json({ message: "An internal server error occurred" });
   }
 };
 

@@ -45,7 +45,8 @@ exports.addPoint = async(req,res) => {
         const update = await User.findOneAndUpdate({user_id:id},{points: newPoints,user_level:level},{new:true});
         return res.status(200).json("Points added successfully");
     }catch(error){
-        return res.status(500).json("Internal Error: ", error);
+        console.error(error);
+        return res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -79,6 +80,7 @@ exports.redeem = async(req,res) => {
             return res.status(200).json({ discount });
         }
     }catch(error){
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }

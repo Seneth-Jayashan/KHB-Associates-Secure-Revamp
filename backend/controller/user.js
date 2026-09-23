@@ -6,26 +6,28 @@ require("dotenv").config();
 
 exports.getUsers = async(req,res) => {
     try {
-        const users = await User.find().select('-password -token');
+        const users = await User.find();
         if(!users) {
             return res.status(404).json({message: "No users found"});
         }
         res.status(200).json(users);
     }catch (error) {
-        res.status(500).json({message: "Error fetching users"});
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
 exports.getUserById = async(req, res) => {
     try {
         const id = req.query.id;
-        const user = await User.findOne({user_id:id}).select('-password -token');
+        const user = await User.findOne({user_id:id});
         if(!user) {
             return res.status(404).json({message: "User not found"});
         }
         res.status(200).json(user);
     }catch (error) {
-        res.status(500).json({message: "Error fetching user"});
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 };
 
@@ -43,7 +45,8 @@ exports.forgotPassword = async (req,res) => {
 
         res.status(200).json({message: "Reset link send successfully"});
     }catch(error){
-        return res.status(500).json("Error", error);
+        console.error(error);
+        return res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -62,7 +65,8 @@ exports.resetPassword = async(req,res) => {
         res.json({message: "Password reset successfully!"});
 
     }catch(error){
-        res.status(500).json({ message: `Something went wrong 123: ${error}` });
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -179,12 +183,13 @@ exports.updateUser = async(req,res) => {
             profilePic , 
         }
 
-        const user = await User.findOneAndUpdate({user_id},updateData, {new:true}).select('-password -token');
+        const user = await User.findOneAndUpdate({user_id},updateData, {new:true});
         if(!user) return res.status(404).json("User not found");
         console.log(user);
         res.json({ message: "User updated successfully", user });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 }
@@ -195,6 +200,7 @@ exports.deleteUser = async(req,res) => {
         const user = await User.findOneAndDelete({user_id});
         res.json({message: "User deleted successfully"});
     }catch (error) {
-        res.status(500).json({message: "Error deleting user"});
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }

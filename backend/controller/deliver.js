@@ -45,7 +45,8 @@ exports.getDeliverByEmail = async (req, res) => {
 
         res.status(200).json(deliver);
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
     
 };
@@ -84,7 +85,8 @@ exports.addDeliver = async(req,res) => {
 
         res.json({ message: "Deliver SignUp successfully", deliver });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
    
 }
@@ -117,7 +119,8 @@ exports.updateDeliver = async(req,res) => {
         console.log(deliver);
         res.json({ message: "Deliver updated successfully", deliver });
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -135,7 +138,8 @@ exports.updatePassword = async (req,res) => {
 
         res.status(200).json({message: "Password updated Successfully!"});
     }catch (error) {
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -233,7 +237,8 @@ exports.getDeliveries = async(req,res) => {
 
         res.status(200).json(delivery);
     }catch(error){
-        return res.status(500).json(error);
+        return console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -249,7 +254,8 @@ exports.getAllDeliveries = async(req,res) => {
 
         res.status(200).json(delivery);
     }catch(error){
-        return res.status(500).json( error);
+        return console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -273,7 +279,8 @@ exports.updateOrderStatus = async (req, res) => {
 
         res.status(200).json({ message: "Order updated successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Something went wrong", error: error.message });
+        console.error(error);
+        res.status(500).json({ message: "Something went wrong" });
     }
 };
 
@@ -287,7 +294,8 @@ exports.getDeliveryCount = async(req,res) => {
         }
         res.status(200).json(count);
     }catch(error){
-        res.status(500).json('Something went wrong');
+        console.error("Unhandled error");
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
 
@@ -336,6 +344,7 @@ exports.deleteStat = async(req,res) => {
 
         res.status(200).json('Stat Deleted Successfully');
     }catch(error){
-        res.status(500).json(error);
+        console.error(error);
+        res.status(500).json({ message: "An internal server error occurred" });
     }
 }
