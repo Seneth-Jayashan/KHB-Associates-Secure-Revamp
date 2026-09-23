@@ -9,6 +9,21 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ storage });
+// Only allow common image types to be uploaded as profile pictures
+const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+
+const fileFilter = (req, file, cb) => {
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error("Invalid file type. Only JPEG, PNG, and WEBP images are allowed."), false);
+    }
+};
+
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
+});
 
 module.exports = upload;
