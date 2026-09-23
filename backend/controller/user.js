@@ -6,7 +6,7 @@ require("dotenv").config();
 
 exports.getUsers = async(req,res) => {
     try {
-        const users = await User.find();
+        const users = await User.find().select('-password -token');
         if(!users) {
             return res.status(404).json({message: "No users found"});
         }
@@ -19,7 +19,7 @@ exports.getUsers = async(req,res) => {
 exports.getUserById = async(req, res) => {
     try {
         const id = req.query.id;
-        const user = await User.findOne({user_id:id});
+        const user = await User.findOne({user_id:id}).select('-password -token');
         if(!user) {
             return res.status(404).json({message: "User not found"});
         }
@@ -179,7 +179,7 @@ exports.updateUser = async(req,res) => {
             profilePic , 
         }
 
-        const user = await User.findOneAndUpdate({user_id},updateData, {new:true});
+        const user = await User.findOneAndUpdate({user_id},updateData, {new:true}).select('-password -token');
         if(!user) return res.status(404).json("User not found");
         console.log(user);
         res.json({ message: "User updated successfully", user });

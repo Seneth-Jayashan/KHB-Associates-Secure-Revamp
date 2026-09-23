@@ -9,7 +9,7 @@ require("dotenv").config();
 
 exports.getCustomers = async (req, res) => {
     try {
-        const customers = await Customer.find({role:'customer'});
+        const customers = await Customer.find({role:'customer'}).select('-password -token');
         res.status(200).json(customers);
     }catch (error) {
         res.status(500).json(error);
@@ -19,7 +19,7 @@ exports.getCustomers = async (req, res) => {
 exports.getCustomerById = async(req, res) => {
     try {
         const id = req.query.id;
-        const customer = await Customer.findOne({user_id:id, role:'customer'});
+        const customer = await Customer.findOne({user_id:id, role:'customer'}).select('-password -token');
 
         if(!customer) return res.status(404).json("User not found");
 
@@ -32,7 +32,7 @@ exports.getCustomerById = async(req, res) => {
 exports.getCustomerByEmail = async (req, res) => {
     try {
         const email = req.body.email;
-        const customer = await Customer.findOne({email:email, role:'customer'});
+        const customer = await Customer.findOne({email:email, role:'customer'}).select('-password -token');
 
         if(!customer) return res.status(404).json("User not found");
 
@@ -104,7 +104,7 @@ exports.updateCustomer = async(req, res) => {
             profilePic , 
         }
 
-        const customer = await Customer.findOneAndUpdate({user_id},updateData, {new:true});
+        const customer = await Customer.findOneAndUpdate({user_id},updateData, {new:true}).select('-password -token');
         if(!customer) return res.status(404).json("User not found");
         console.log(customer);
         res.json({ message: "Customer updated successfully", customer });
@@ -166,7 +166,7 @@ exports.deleteCustomer = async(req, res) => {
 exports.getCustomerNameById = async(req, res) => {
     try {
         const id = req.query.id;
-        const customer = await Customer.findOne({ user_id: id, role: 'customer' }).select('-password');
+        const customer = await Customer.findOne({ user_id: id, role: 'customer' }).select('-password -token');
 
         if(!customer) return res.status(404).json("User not found");
 
