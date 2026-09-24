@@ -50,6 +50,8 @@ exports.googleAuthCallback = async (req, res) => {
             
             if (user) {
                 // Link the Google identity to existing account
+                // Note: We deliberately do NOT update the user's role here.
+                // Existing admins or managers will retain their current privileges.
                 user.googleId = sub;
                 await user.save();
             } else {
@@ -64,20 +66,24 @@ exports.googleAuthCallback = async (req, res) => {
                     password: randomPassword,
                     googleId: sub,
                     profilePic: picture,
-                    isVerified: true
+                    isVerified: true,
+                    // Security: Explicitly enforce the 'customer' role for all new 
+                    // OAuth registrations to prevent privilege escalation.
+                    role: 'customer'
                 });
             }
         }
 
-        // Generate JWT
+        // Generate JWT using KHB's existing authorization/session schema
+        // We use user.user_id (not MongoDB _id) to integrate perfectly with KHB's auth middleware
         const token = jwt.sign(
-            { id: user._id, role: user.role, email: user.email },
+            { id: user.user_id, role: user.role },
             process.env.SECRET_KEY,
-            { expiresIn: "1d" }
+            { expiresIn: "30m" }
         );
 
-        // Redirect back to frontend with the token
-        res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
+        // Redirect back to frontend with the token and user details to match KHB login flow
+        res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}&role=${user.role}&id=${user.user_id}`);
 
     } catch (error) {
         console.error("Error during Google authentication:", error);
