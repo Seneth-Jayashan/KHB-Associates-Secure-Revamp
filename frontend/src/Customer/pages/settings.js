@@ -7,6 +7,7 @@ export default function Settings() {
   const userData = location.state?.data || {};
 
   const userId = userData.user_id;
+  const token = localStorage.getItem('token');
 
   const [updateData, setUpdateData] = useState({
     firstName: userData.firstName || "",
@@ -42,19 +43,19 @@ export default function Settings() {
     const file = e.target.files[0];
 
     if (file) {
-        if (file.type.startsWith("image/")) {
-            setProfileImg(file);
-            setProfileImgPreview(URL.createObjectURL(file));
-            setErrorMessage("");
-        } else {
-            setErrorMessage("Please select a valid image file.");
-        }
+      if (file.type.startsWith("image/")) {
+        setProfileImg(file);
+        setProfileImgPreview(URL.createObjectURL(file));
+        setErrorMessage("");
+      } else {
+        setErrorMessage("Please select a valid image file.");
+      }
     } else {
-        // If no new image is selected, retaiZn the current profile picture
-        setProfileImg(null);
-        setProfileImgPreview(userData.profilePic ? `http://localhost:3001${userData.profilePic}` : "");
+      // If no new image is selected, retaiZn the current profile picture
+      setProfileImg(null);
+      setProfileImgPreview(userData.profilePic ? `http://localhost:3001${userData.profilePic}` : "");
     }
-};
+  };
 
   const handleAccountSubmit = async (e) => {
     e.preventDefault();
@@ -69,28 +70,30 @@ export default function Settings() {
       formDataToSend.append("email", updateData.email);
       formDataToSend.append("phone", updateData.phone);
       formDataToSend.append("address", updateData.address);
-      if(profileImg){
+      if (profileImg) {
         formDataToSend.append("profile_image", profileImg);
       }
       await axios.put("http://localhost:3001/api/customers/updatecustomer", formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
         }
       });
       setSuccessMsg("Account updated successfully");
       setTimeout(() => {
         setSuccessMsg("");
-        window.location.href="/customer-dashboard/";
+        window.location.href = "/customer-dashboard/";
       }, 3000);
-      
-    }catch (error){
+
+    } catch (error) {
       setErrorMessage("Failed to update account 2");
+      console.log(error)
     }
   };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    try{
+    try {
       if (passwords.newPassword !== passwords.confirmPassword) {
         setErrorMessage("Passwords do not match!");
         return;
@@ -102,17 +105,18 @@ export default function Settings() {
       await axios.put("http://localhost:3001/api/customers/updatepassword", formDataToSend, {
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
       setSuccessMsg("Password updated successfully");
       setTimeout(() => {
         setSuccessMsg("");
-        window.location.href="/logout";
+        window.location.href = "/logout";
       }, 3000);
-    }catch (error){
+    } catch (error) {
       setErrorMessage("Failed to update password");
     }
-    
+
   };
 
   useEffect(() => {

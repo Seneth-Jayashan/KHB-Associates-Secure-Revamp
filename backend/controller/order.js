@@ -3,19 +3,21 @@ const Order = require("../model/order");
 const Cart = require("../model/Cart");
 const User = require("../model/user");
 const Notification = require("../model/notification"); // Import Notification
+const env = require('dotenv')
+env.config()
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "abhishekappuhamy12@gmail.com",
-    pass: "egwd deqd ulog obbz",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
 const sendEmail = (to, subject, text, html) => {
   const mailOptions = {
-    from: "abhishekappuhamy12@gmail.com",
+    from: process.env.EMAIL_USER,
     to,
     subject,
     text,
@@ -30,7 +32,7 @@ const sendEmail = (to, subject, text, html) => {
 // CREATE ORDER
 exports.createOrder = async (req, res) => {
   try {
-    const { user_id, email, shipping_address, payment_method,total_price } = req.body;
+    const { user_id, email, shipping_address, payment_method, total_price } = req.body;
     if (!user_id || !email || !shipping_address || !payment_method)
       return res.status(400).json({ message: "All fields are required" });
 
@@ -75,31 +77,23 @@ exports.createOrder = async (req, res) => {
     sendEmail(
       email,
       "🛒 Order Confirmation - KHB Associates",
-      `Hi ${user?.firstName || "Customer"},\nThanks for ordering!\nOrder ID: ${
-        newOrder._id
+      `Hi ${user?.firstName || "Customer"},\nThanks for ordering!\nOrder ID: ${newOrder._id
       }\nTotal: LKR${newOrder.total_price}\n\n${productDetailsText}`,
-      `<h3>Hi ${
-        user?.firstName || "Customer"
-      },</h3><p>Thanks for your order with <strong>KHB Associates</strong>.</p><p><strong>Order ID:</strong> ${
-        newOrder._id
-      }</p><p><strong>Total:</strong> LKR${
-        newOrder.total_price
+      `<h3>Hi ${user?.firstName || "Customer"
+      },</h3><p>Thanks for your order with <strong>KHB Associates</strong>.</p><p><strong>Order ID:</strong> ${newOrder._id
+      }</p><p><strong>Total:</strong> LKR${newOrder.total_price
       }</p><ul>${productDetailsHTML}</ul>`
     );
 
     // Admin email
     sendEmail(
-      "abhishekappuhamy12@gmail.com",
+      process.env.EMAIL_USER,
       "📦 New Order Received - KHB Associates",
-      `New order from ${user?.firstName || "N/A"} (${user?.email})\nOrder ID: ${
-        newOrder._id
+      `New order from ${user?.firstName || "N/A"} (${user?.email})\nOrder ID: ${newOrder._id
       }\nTotal: LKR${newOrder.total_price}\n${productDetailsText}`,
-      `<h3>New Order Received</h3><p><strong>Customer:</strong> ${
-        user?.firstName || "N/A"
-      } (${user?.email})</p><p><strong>Order ID:</strong> ${
-        newOrder._id
-      }</p><p><strong>Total:</strong> LKR${
-        newOrder.total_price
+      `<h3>New Order Received</h3><p><strong>Customer:</strong> ${user?.firstName || "N/A"
+      } (${user?.email})</p><p><strong>Order ID:</strong> ${newOrder._id
+      }</p><p><strong>Total:</strong> LKR${newOrder.total_price
       }</p><ul>${productDetailsHTML}</ul>`
     );
 
@@ -188,7 +182,7 @@ exports.updateOrderStatus = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const { order_id } = req.params;
-    const order = await Order.findOne({ order_id: Number(order_id) });  
+    const order = await Order.findOne({ order_id: Number(order_id) });
     if (!order) return res.status(404).json({ message: "Order not found" });
     // const productDetails = await Promise.all(
     //   order.items.map(async (item) => {
@@ -205,7 +199,7 @@ exports.getOrderById = async (req, res) => {
   catch (error) {
     console.error("❌ getOrderById Error:", error);
     res.status(500).json({ message: "Internal Server Error", error });
-  } 
+  }
 };
 
 

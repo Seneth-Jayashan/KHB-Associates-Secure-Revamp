@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Vector from '../assets/login image.png';
 import Logo from '../assets/logo 4.png';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Nav from "../components/navigation";
 import Swal from "sweetalert2";
-
-
 
 export default function SignIn() {
   const [formData, setFormData] = useState({
@@ -17,6 +15,54 @@ export default function SignIn() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Parse URL for Google OAuth callback parameters
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token");
+    const role = params.get("role");
+    const errorMsg = params.get("error");
+
+    if (errorMsg) {
+      setError("Google authentication failed. Please try again.");
+      Swal.fire({
+        title: "Error!",
+        text: "Google authentication failed!",
+        icon: "error",
+      });
+      // Clear URL parameters
+      navigate("/signin", { replace: true });
+    } else if (token && role) {
+      // Store token and simulate the successful login flow
+      localStorage.setItem("token", token);
+      Swal.fire({
+        title: "Success!",
+        text: "You Successfully Logged in with Google!",
+        icon: "success",
+      });
+      
+      switch(role){
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        case 'customer':
+          navigate('/customer-dashboard');
+          break;
+        case 'inventory_manager':
+          navigate('/inventory-dashboard');
+          break;
+        case 'customer_supporter':
+          navigate('/support-dashboard');
+          break;
+        case 'deliver':
+          navigate('/deliver-dashboard');
+          break;
+        default:
+          navigate('/');
+      }
+    }
+  }, [location, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -141,8 +187,24 @@ export default function SignIn() {
               </button>
             </form>
 
+            {/* OR Divider */}
+            <div className="flex items-center w-full mt-6">
+              <div className="flex-1 border-t border-gray-300"></div>
+              <span className="px-3 text-gray-500 text-sm font-semibold">OR</span>
+              <div className="flex-1 border-t border-gray-300"></div>
+            </div>
+
+            {/* Google Login Button */}
+            <a
+              href="http://localhost:3001/api/auth/google"
+              className="mt-6 flex items-center justify-center w-full bg-white border border-gray-300 text-gray-700 p-3 rounded font-bold hover:bg-gray-50 transition-all duration-300 shadow-sm"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" className="w-5 h-5 mr-3" />
+              Continue with Google
+            </a>
+
             {/* Signup Link */}
-            <p className="text-xs text-gray-400 mt-4">
+            <p className="text-xs text-gray-400 mt-6">
               Don't have an account?{' '}
               <a href="/signup" className="text-purple-700 font-bold hover:underline">
                 Signup

@@ -26,20 +26,15 @@ const productSchema = new Schema({
 });
 
 // Pre-save middleware to auto-increment `product_id`
-productSchema.pre('save', async function (next) {
-  if (!this.isNew) return next(); // Only run when creating a new document
+productSchema.pre('save', async function () {
+  if (!this.isNew) return; // Only run when creating a new document
 
-  try {
-    const counter = await Counter.findOneAndUpdate(
-      { name: "product_id" },
-      { $inc: { value: 1 } },
-      { new: true, upsert: true } // Create a new counter document if it doesn't exist
-    );
-    this.product_id = counter.value; // Assign the incremented value to `product_id`
-    next();
-  } catch (error) {
-    next(error);
-  }
+  const counter = await Counter.findOneAndUpdate(
+    { name: "product_id" },
+    { $inc: { value: 1 } },
+    { returnDocument: 'after', upsert: true } // Create a new counter document if it doesn't exist
+  );
+  this.product_id = counter.value; // Assign the incremented value to `product_id`
 });
 
 const Product = mongoose.model("product", productSchema);
