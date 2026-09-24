@@ -40,24 +40,33 @@ exports.googleAuthCallback = async (req, res) => {
         });
         
         const payload = ticket.getPayload();
-        const { email, given_name, family_name, picture } = payload;
+        const { sub, email, given_name, family_name, picture } = payload;
 
-        // Check if user exists
-        let user = await User.findOne({ email });
+        // Verify user by OIDC sub claim first, then fallback to email (for linking existing accounts)
+        let user = await User.findOne({ googleId: sub });
 
         if (!user) {
-            // Create a new user if they don't exist
-            // Using a random placeholder password since they use Google to login
-            const randomPassword = Math.random().toString(36).slice(-10);
+            user = await User.findOne({ email });
             
-            user = await User.create({
-                firstName: given_name || "Google",
-                lastName: family_name || "User",
-                email: email,
-                password: randomPassword,
-                profilePic: picture,
-                isVerified: true
-            });
+            if (user) {
+                // Link the Google identity to existing account
+                user.googleId = sub;
+                await user.save();
+            } else {
+                // Create a new user using the verified Google identity
+                // Using a random placeholder password since they use Google to login
+                const randomPassword = Math.random().toString(36).slice(-10);
+                
+                user = await User.create({
+                    firstName: given_name || "Google",
+                    lastName: family_name || "User",
+                    email: email,
+                    password: randomPassword,
+                    googleId: sub,
+                    profilePic: picture,
+                    isVerified: true
+                });
+            }
         }
 
         // Generate JWT

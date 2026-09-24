@@ -15,6 +15,7 @@ const userSchema = new Schema({
     lastName: {type: String,required: true},
     email: {type: String,required: true,unique: true},
     password: {type: String,required: true},
+    googleId: {type: String, unique: true, sparse: true},
     profilePic: {type: String},
     role: {type: String,enum: ['admin', 'customer', 'inventory_manager', 'customer_supporter', 'deliver'],default: 'customer'},
     address: {type: String},
