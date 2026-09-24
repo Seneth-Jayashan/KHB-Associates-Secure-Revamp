@@ -83,10 +83,10 @@ exports.googleAuthCallback = async (req, res) => {
         );
 
         // Redirect back to frontend with the token and user details to match KHB login flow
-        res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}&role=${user.role}&id=${user.user_id}`);
+        res.redirect(`${process.env.FRONTEND_URL}/signin?token=${token}&role=${user.role}&id=${user.user_id}`);
 
     } catch (error) {
         console.error("Error during Google authentication:", error);
-        res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+        res.redirect(`${process.env.FRONTEND_URL}/signin?error=auth_failed`);
     }
 };
