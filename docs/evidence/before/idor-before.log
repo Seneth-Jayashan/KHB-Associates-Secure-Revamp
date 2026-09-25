@@ -1,0 +1,45 @@
+
+### 1. Any visitor reads ANY order by ID (order 2 belongs to user_id 2)
+$ curl -s -w ' HTTP %{http_code}' http://localhost:3001/api/orders/2
+{"_id":"6ab2547f96f0c258e96ad2d2","user_id":2,"items":[{"product_id":1,"quantity":2,"_id":"6ab2547f96f0c258e96ad2d3"}],"total_price":240,"status":"delivered","shipping_address":"Seneth Jayashan, Colombo, 0703999709","payment_status":"pending","payment_method":"COD","payment_slip":null,"created_at":"2026-09-22T10:12:15.042Z","updated_at":"2026-09-22T10:44:00.405Z","order_id":2,"__v":0} -> HTTP 200
+
+
+### 2. Order 1 (another user) - just change the ID
+$ curl -s -w ' HTTP %{http_code}' http://localhost:3001/api/orders/1
+{"status":"pending","payment_status":"pending","payment_method":"COD","_id":"682b845c57fdff276b7e3986","customer_id":1,"products":[{"product_id":1,"order_quantity":3,"_id":"682b845c57fdff276b7e3987"}],"order_status":"Pending","order_date":"2025-05-19T19:19:56.904Z","order_id":1,"__v":0,"items":[],"created_at":"2026-09-25T13:59:29.158Z","updated_at":"2026-09-25T13:59:29.158Z"} -> HTTP 200
+
+
+### 3. Order history of arbitrary user_id=2
+$ curl -s -w ' HTTP %{http_code}' http://localhost:3001/api/orders/user/2
+[{"_id":"6ab2547f96f0c258e96ad2d2","user_id":2,"items":[{"product_id":1,"quantity":2,"_id":"6ab2547f96f0c258e96ad2d3"}],"total_price":240,"status":"delivered","shipping_address":"Seneth Jayashan, Colombo, 0703999709","payment_status":"pending","payment_method":"COD","payment_slip":null,"created_at":"2026-09-22T10:12:15.042Z","updated_at":"2026-09-22T10:44:00.405Z","order_id":2,"__v":0}] -> HTTP 200
+
+
+### 4. Order summary of arbitrary user_id=2
+$ curl -s -w ' HTTP %{http_code}' http://localhost:3001/api/orders/user/summary/2
+{"totalOrders":1,"pending":0,"processing":0,"shipped":0,"delivered":1,"cancelled":0} -> HTTP 200
+
+
+### 5. Cart of arbitrary user_id=2
+$ curl -s -w ' HTTP %{http_code}' http://localhost:3001/api/cart/getcart/2
+{"_id":"6ab254b396f0c258e96ad2de","user_id":2,"items":[],"total_price":0,"created_at":"2026-09-22T10:13:07.600Z","updated_at":"2026-09-22T10:13:10.386Z","__v":0} -> HTTP 200
+
+
+### 6. Notifications of arbitrary user_id=2
+$ curl -s -w ' HTTP %{http_code}' http://localhost:3001/api/notifications/user/2
+[{"_id":"6ab25c0196f0c258e96ad3c0","user_id":2,"message":"Order 2 status updated to delivered","created_at":"2026-09-22T10:44:17.791Z","__v":0},{"_id":"6ab25be996f0c258e96ad3b2","user_id":2,"message":"Order 2 status updated to processing","created_at":"2026-09-22T10:43:53.336Z","__v":0},{"_id":"6ab2547f96f0c258e96ad2d8","user_id":2,"message":"Your order has been placed successfully! Order ID: 6ab2547f96f0c258e96ad2d2","created_at":"2026-09-22T10:12:15.603Z","__v":0}] -> HTTP 200
+
+
+### 7. Cancel endpoint with no token (non-existent order 999999; reaches business logic -> 400, not 401/403)
+$ curl -s -w ' HTTP %{http_code}' -X PUT http://localhost:3001/api/orders/cancel/999999
+{"message":"Order cannot be cancelled"} -> HTTP 400
+
+
+### 8. Admin status-update with no token (non-existent order 999999; 404 = auth passed)
+$ curl -s -w ' HTTP %{http_code}' -X PUT -H 'Content-Type: application/json' -d '{"status":"shipped"}' http://localhost:3001/api/orders/update/999999
+{"message":"Order not found"} -> HTTP 404
+
+
+### 9. Delete notification with no token (non-existent id; 404 from business logic, not 401)
+$ curl -s -w ' HTTP %{http_code}' -X DELETE http://localhost:3001/api/notifications/000000000000000000000000
+{"message":"Notification not found."} -> HTTP 404
+

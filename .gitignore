@@ -1,0 +1,6 @@
+# Dependencies
+node_modules/
+
+# Backend uploads and environment secrets
+backend/uploads/
+backend/.env
