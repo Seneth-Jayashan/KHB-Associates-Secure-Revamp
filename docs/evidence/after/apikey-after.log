@@ -1,0 +1,37 @@
+=== 1. Source scan (frontend/src)
+PASS frontend/src contains an AIza key                              expected=0    actual=0
+PASS frontend/src references generativelanguage.googleapis          expected=0    actual=0
+PASS frontend/src contains a '?key=' query parameter                expected=0    actual=0
+PASS Chatbot.js calls the backend proxy endpoint                    expected=1    actual=1
+=== 2. Repository scan
+PASS files in repo containing a real-looking Google key             expected=0    actual=0
+PASS tracked files (HEAD) containing the old key                    expected=0    actual=0
+PASS backend/.env is tracked by git                                 expected=0    actual=0
+PASS backend/.env is git-ignored (1=yes)                            expected=1    actual=1
+PASS backend/.env.example GEMINI_API_KEY value length               expected=0    actual=0
+NOTE: the old key still exists in git history (commits listed below); it is inert only once rotated/revoked.
+      history: cb2478b fix(security): remediate CWE-798 hardcoded Gemini API key in chatbot
+      history: 3c13431 docs(security): capture pre-remediation evidence for CWE-639 and CWE-798
+      history: 822ee37 Old Repository  Initial Commit
+=== 3. Backend proxy behaviour (isolated instances, real key NOT loaded)
+PASS missing message -> 400                                         expected=400  actual=400
+PASS non-string message -> 400                                      expected=400  actual=400
+PASS oversized message (501 chars) -> 400                           expected=400  actual=400
+PASS valid message, GEMINI_API_KEY missing -> 503                   expected=503  actual=503
+PASS rate limit: 429 returned within a 12-request burst             expected=1    actual=1
+      burst status codes: 503 503 503 503 503 429 429 429 429 429 429 429
+PASS rate-limit headers present on 429 (1=yes)                      expected=1    actual=1
+PASS dummy key -> Google rejects -> generic 502                     expected=502  actual=502
+PASS dummy key present in response body/headers                     expected=0    actual=0
+PASS dummy key present in server log                                expected=0    actual=0
+      response body: {"message":"Chatbot service is currently unavailable."}
+      server log   : ❌ chatbot upstream error: HTTP 400
+=== 4. Production bundle scan
+PASS frontend production build succeeded (1=yes)                    expected=1    actual=1
+PASS bundle files containing an AIza key                            expected=0    actual=0
+PASS bundle files containing an AQ.-style key                       expected=0    actual=0
+PASS bundle files referencing generativelanguage                    expected=0    actual=0
+PASS bundle files referencing x-goog-api-key                        expected=0    actual=0
+PASS bundle references the backend proxy endpoint (>=1)             expected=1    actual=1
+
+Result: 24 passed, 0 failed
