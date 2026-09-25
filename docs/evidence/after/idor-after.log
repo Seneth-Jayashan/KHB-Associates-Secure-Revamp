@@ -1,0 +1,44 @@
+--- No token -> 401
+PASS expect 401 got 401  none      GET /orders/2
+PASS expect 401 got 401  none      GET /orders/user/2
+PASS expect 401 got 401  none      GET /orders/user/summary/2
+PASS expect 401 got 401  none      GET /cart/getcart/2
+PASS expect 401 got 401  none      GET /notifications/user/2
+PASS expect 401 got 401  none      PUT /orders/cancel/999999
+PASS expect 401 got 401  none      PUT /orders/update/999999
+PASS expect 401 got 401  none      DELETE /notifications/6ab25c0196f0c258e96ad3c0
+PASS expect 401 got 401  none      GET /orders/all
+PASS expect 401 got 401  forged    GET /orders/2
+--- Authenticated attacker (customer 999) -> 403
+PASS expect 403 got 403  attacker  GET /orders/2
+PASS expect 403 got 403  attacker  GET /orders/user/2
+PASS expect 403 got 403  attacker  GET /orders/user/summary/2
+PASS expect 403 got 403  attacker  GET /cart/getcart/2
+PASS expect 403 got 403  attacker  GET /notifications/user/2
+PASS expect 403 got 403  attacker  DELETE /notifications/user/2
+PASS expect 403 got 403  attacker  DELETE /notifications/6ab25c0196f0c258e96ad3c0
+PASS expect 403 got 403  attacker  PUT /orders/cancel/2
+PASS expect 403 got 403  attacker  PUT /cart/updatetotalprice
+PASS expect 403 got 403  attacker  PUT /cart/updatecartitem
+PASS expect 403 got 403  attacker  DELETE /cart/clearcart/2
+PASS expect 403 got 403  attacker  GET /orders/424242
+--- Role enforcement (customer on admin routes, unassigned deliver) -> 403
+PASS expect 403 got 403  customer  GET /orders/all
+PASS expect 403 got 403  customer  GET /orders/analytics
+PASS expect 403 got 403  customer  PUT /orders/update/2
+PASS expect 403 got 403  deliver   GET /orders/2
+--- Legitimate owner -> 200
+PASS expect 200 got 200  owner     GET /orders/2
+PASS expect 200 got 200  owner     GET /orders/user/2
+PASS expect 200 got 200  owner     GET /orders/user/summary/2
+PASS expect 200 got 200  owner     GET /cart/getcart/2
+PASS expect 200 got 200  owner     GET /notifications/user/2
+PASS expect 403 got 403  owner     GET /orders/user/3
+--- Admin -> allowed
+PASS expect 200 got 200  admin     GET /orders/all
+PASS expect 200 got 200  admin     GET /orders/2
+FAIL expect 200 got 500  admin     GET /orders/analytics
+PASS expect 200 got 200  admin     GET /orders/user/2
+PASS expect 404 got 404  admin     PUT /orders/update/999999
+
+Result: 36 passed, 1 failed

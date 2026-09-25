@@ -24,7 +24,7 @@ function Nav() {
         setUserData(userResponse.data);
 
         // After user data is set, fetch the cart length
-        const cartResponse = await axios.get(`http://localhost:3001/api/cart/getcart/${userResponse.data.user_id}`);
+        const cartResponse = await axios.get(`http://localhost:3001/api/cart/getcart/${userResponse.data.user_id}`, { headers: { Authorization: `Bearer ${token}` } });
         const length = cartResponse?.data?.items?.length || 0;
         setCartLength(length);
       } catch (error) {

@@ -32,7 +32,9 @@ export default function AllOrders() {
   // Fetch all orders
   const fetchOrders = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/orders/all");
+      const response = await fetch("http://localhost:3001/api/orders/all", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       if (!response.ok) throw new Error("Failed to fetch orders");
       const data = await response.json();
       setOrders(data);
@@ -52,7 +54,7 @@ export default function AllOrders() {
     const { orderId } = selectedOrder;
 
     try {
-      await axios.put(`http://localhost:3001/api/orders/cancel/${orderId}`);
+      await axios.put(`http://localhost:3001/api/orders/cancel/${orderId}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
       fetchOrders();
       setErrorMessage(""); // Clear error message after successful cancellation
     } catch (error) {

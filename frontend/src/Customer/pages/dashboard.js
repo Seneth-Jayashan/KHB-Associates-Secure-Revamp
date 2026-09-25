@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   const fetchOrderSummary = async (user_id) => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/orders/user/summary/${user_id}`);
+      const res = await axios.get(`http://localhost:3001/api/orders/user/summary/${user_id}`, { headers: { Authorization: `Bearer ${token}` } });
       setOrderSummary(res.data);
     } catch (error) {
       console.error("Error fetching order summary:", error);

@@ -3,6 +3,14 @@ const Order = require("../model/order");
 const Cart = require("../model/Cart");
 const User = require("../model/user");
 const Notification = require("../model/notification"); // Import Notification
+const Delivery = require("../model/delivery");
+
+// --- Authorization helpers (CWE-639) ---
+// Identity is always taken from the verified JWT (req.user), never from client input.
+const isAdmin = (req) => req.user && req.user.role === "admin";
+const ownsUserId = (req, userId) =>
+  isAdmin(req) || Number(userId) === Number(req.user.id);
+const FORBIDDEN = { message: "Access denied. You do not have permission" };
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
@@ -30,8 +38,10 @@ const sendEmail = (to, subject, text, html) => {
 // CREATE ORDER
 exports.createOrder = async (req, res) => {
   try {
-    const { user_id, email, shipping_address, payment_method,total_price } = req.body;
-    if (!user_id || !email || !shipping_address || !payment_method)
+    // Owner is the authenticated user; client-supplied user_id/email are ignored
+    const user_id = req.user.id;
+    const { shipping_address, payment_method, total_price } = req.body;
+    if (!shipping_address || !payment_method)
       return res.status(400).json({ message: "All fields are required" });
 
     if (!["COD", "Payment Slip"].includes(payment_method))
@@ -45,6 +55,8 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
 
     const user = await User.findOne({ user_id: Number(user_id) });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const email = user.email;
 
     const newOrder = new Order({
       user_id: Number(user_id),
@@ -114,7 +126,7 @@ exports.createOrder = async (req, res) => {
       .json({ message: "Order placed successfully", order: newOrder });
   } catch (error) {
     console.error("❌ createOrder Error:", error);
-    return res.status(500).json({ message: "Internal Server Error", error });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -122,13 +134,14 @@ exports.createOrder = async (req, res) => {
 exports.getUserOrders = async (req, res) => {
   try {
     const { user_id } = req.params;
+    if (!ownsUserId(req, user_id)) return res.status(403).json(FORBIDDEN);
     const orders = await Order.find({ user_id: Number(user_id) }).sort({
       created_at: -1,
     });
     res.status(200).json(orders);
   } catch (error) {
     console.error("❌ getUserOrders Error:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -188,8 +201,27 @@ exports.updateOrderStatus = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const { order_id } = req.params;
-    const order = await Order.findOne({ order_id: Number(order_id) });  
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const order = await Order.findOne({ order_id: Number(order_id) });
+    if (!order) {
+      // Non-admins get 403 for missing orders too, so order IDs cannot be enumerated
+      return isAdmin(req)
+        ? res.status(404).json({ message: "Order not found" })
+        : res.status(403).json(FORBIDDEN);
+    }
+
+    let allowed = isAdmin(req);
+    if (!allowed && req.user.role === "customer") {
+      allowed = Number(order.user_id) === Number(req.user.id);
+    } else if (!allowed && req.user.role === "deliver") {
+      // A deliver may only see orders assigned to them
+      const assignment = await Delivery.findOne({
+        order_id: String(order.order_id),
+        deliver_id: String(req.user.id),
+      });
+      allowed = !!assignment;
+    }
+    if (!allowed) return res.status(403).json(FORBIDDEN);
+
     // const productDetails = await Promise.all(
     //   order.items.map(async (item) => {
     //     const product = await Product.findOne({ product_id: item.product_id });
@@ -204,7 +236,7 @@ exports.getOrderById = async (req, res) => {
   }
   catch (error) {
     console.error("❌ getOrderById Error:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
+    res.status(500).json({ message: "Internal Server Error" });
   } 
 };
 
@@ -214,8 +246,21 @@ exports.cancelOrder = async (req, res) => {
   try {
     const { order_id } = req.params;
 
+    // Customers may only cancel their own orders; admins may cancel any.
+    // Non-admins get 403 for unknown orders too, so order IDs cannot be enumerated.
+    if (!isAdmin(req)) {
+      const existing = await Order.findOne({ order_id: Number(order_id) });
+      if (!existing || Number(existing.user_id) !== Number(req.user.id)) {
+        return res.status(403).json(FORBIDDEN);
+      }
+    }
+    const filter = {
+      order_id: Number(order_id),
+      status: { $nin: ["shipped", "delivered"] },
+    };
+
     const cancelledOrder = await Order.findOneAndUpdate(
-      { order_id: order_id, status: { $nin: ["shipped", "delivered"] } },
+      filter,
       { status: "cancelled" },
       { new: true }
     );
@@ -234,7 +279,7 @@ exports.cancelOrder = async (req, res) => {
       .json({ message: "Order cancelled successfully", order: cancelledOrder });
   } catch (error) {
     console.error("❌ cancelOrder Error:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -336,6 +381,7 @@ exports.getAnalytics = async (req, res) => {
 exports.getUserOrderSummary = async (req, res) => {
   try {
     const { user_id } = req.params;
+    if (!ownsUserId(req, user_id)) return res.status(403).json(FORBIDDEN);
 
     const orders = await Order.find({ user_id: Number(user_id) });
 
@@ -358,6 +404,6 @@ exports.getUserOrderSummary = async (req, res) => {
     res.status(200).json(summary);
   } catch (error) {
     console.error("❌ getUserOrderSummary Error:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

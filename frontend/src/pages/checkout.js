@@ -50,7 +50,7 @@ const Checkout = ({ userId, cartTotal }) => {
 
   const fetchCart = async (userId) => {
     try {
-      const response = await axios.get(`http://localhost:3001/api/cart/getcart/${userId}`);
+      const response = await axios.get(`http://localhost:3001/api/cart/getcart/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
       setCart(response.data);
 
       const productDetails = await Promise.all(

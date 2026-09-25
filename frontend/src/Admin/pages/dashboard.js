@@ -33,7 +33,7 @@ export default function Dashboard() {
       useEffect(() => {
         const fetchAnalytics = async () => {
           try {
-            const res = await axios.get('http://localhost:3001/api/orders/analytics');
+            const res = await axios.get('http://localhost:3001/api/orders/analytics', { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
             setAnalytics(res.data);
           } catch (err) {
             console.error('Failed to fetch analytics', err);

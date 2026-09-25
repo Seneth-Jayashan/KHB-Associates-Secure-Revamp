@@ -46,7 +46,7 @@ export default function Cart() {
 
     const fetchCartAndProducts = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/api/cart/getcart/${userData.user_id}`);
+        const response = await axios.get(`http://localhost:3001/api/cart/getcart/${userData.user_id}`, { headers: { Authorization: `Bearer ${token}` } });
         const cartData = response.data;
 
         const productPromises = cartData.items.map(async (item) => {
@@ -94,7 +94,7 @@ export default function Cart() {
     axios.put('http://localhost:3001/api/cart/updatetotalprice', {
       user_id: userData.user_id,
       total_price: total
-    })
+    }, { headers: { Authorization: `Bearer ${token}` } })
       .then(response => setCart(response.data))
       .catch(err => console.error('Error updating total price:', err));
   }, [cart, products, userData]);
@@ -102,7 +102,8 @@ export default function Cart() {
   // Cart actions
   const handleRemoveFromCart = (product_id) => {
     axios.delete('http://localhost:3001/api/cart/removefromcart', {
-      data: { user_id, product_id }
+      data: { user_id, product_id },
+      headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => {
         setCart(response.data);
@@ -113,7 +114,7 @@ export default function Cart() {
   };
 
   const handleClearCart = () => {
-    axios.delete(`http://localhost:3001/api/cart/clearcart/${userData.user_id}`)
+    axios.delete(`http://localhost:3001/api/cart/clearcart/${userData.user_id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(() => {
         setCart(null);
         setTimeout(() => {
@@ -129,7 +130,7 @@ export default function Cart() {
     if (quantity < 1) return;
     axios.put('http://localhost:3001/api/cart/updatecartitem', {
       user_id, product_id, quantity
-    })
+    }, { headers: { Authorization: `Bearer ${token}` } })
       .then(response => {
         setCart(response.data);
       })

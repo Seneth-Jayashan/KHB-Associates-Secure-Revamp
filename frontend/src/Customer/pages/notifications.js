@@ -43,7 +43,7 @@ export default function Notifications() {
 
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/api/notifications/user/${userData.user_id}`);
+        const response = await axios.get(`http://localhost:3001/api/notifications/user/${userData.user_id}`, { headers: { Authorization: `Bearer ${token}` } });
         setNotifications(response.data);
       } catch (err) {
         console.error('Error fetching notifications:', err);      
@@ -55,7 +55,7 @@ export default function Notifications() {
 
   // Clear all notifications
   const handleClearNotifications = () => {
-    axios.delete(`http://localhost:3001/api/notifications/user/${userData.user_id}`)
+    axios.delete(`http://localhost:3001/api/notifications/user/${userData.user_id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(() => {
         setNotifications([]);
       })
@@ -66,7 +66,7 @@ export default function Notifications() {
 
   // Delete single notification
   const handleDeleteNotification = (id) => {
-    axios.delete(`http://localhost:3001/api/notifications/${id}`)
+    axios.delete(`http://localhost:3001/api/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(() => {
         setNotifications((prev) => prev.filter((notification) => notification._id !== id));
       })

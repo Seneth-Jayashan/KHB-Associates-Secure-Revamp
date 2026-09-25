@@ -23,7 +23,8 @@ const authMiddleware = (roles) => (req, res, next) => {
         if (error.name === "TokenExpiredError") {
             return res.status(401).json({ message: "Session expired. Please log in again." });
         }
-        return res.status(400).json({ message: 'Invalid token', error: error.message });
+        // Generic 401 - do not leak verification details (CWE-639 remediation)
+        return res.status(401).json({ message: 'Invalid token' });
     }
 };
 

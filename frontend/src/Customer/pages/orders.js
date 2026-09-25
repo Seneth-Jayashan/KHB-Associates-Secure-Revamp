@@ -59,7 +59,8 @@ export default function UserOrders() {
     if (userData) {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/orders/user/${userData.user_id}`
+          `http://localhost:3001/api/orders/user/${userData.user_id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setOrders(response.data);
       } catch (error) {
@@ -102,7 +103,7 @@ export default function UserOrders() {
     if (!selectedOrder) return;
 
     try {
-      await axios.put(`http://localhost:3001/api/orders/cancel/${selectedOrder}`);
+      await axios.put(`http://localhost:3001/api/orders/cancel/${selectedOrder}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       fetchUserOrders();
       setErrorMessage(""); // Clear error message after successful cancellation
     } catch (error) {

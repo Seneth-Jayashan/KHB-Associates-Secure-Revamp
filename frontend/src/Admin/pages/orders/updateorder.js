@@ -89,7 +89,8 @@ export default function UpdateOrder() {
     try {
       const response = await axios.put(
         `http://localhost:3001/api/orders/update/${orderData.order_id}`,
-        orderData
+        orderData,
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
 
       if (response.status === 200) {

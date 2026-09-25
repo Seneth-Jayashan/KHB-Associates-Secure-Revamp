@@ -30,7 +30,7 @@ const Analytics = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const response = await axios.get("http://localhost:3001/api/orders/analytics");
+        const response = await axios.get("http://localhost:3001/api/orders/analytics", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
         setAnalytics(response.data);
       } catch (error) {
         console.error("Error fetching analytics data:", error);

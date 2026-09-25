@@ -13,7 +13,7 @@ export default function ViewOrder() {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/api/orders/${orderId}`);
+        const response = await axios.get(`http://localhost:3001/api/orders/${orderId}`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
         if (response.status !== 200) {
           throw new Error("Failed to fetch order details");
         }

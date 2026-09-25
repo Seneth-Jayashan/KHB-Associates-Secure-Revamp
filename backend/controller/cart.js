@@ -1,6 +1,13 @@
 const Cart = require('../model/Cart');
 const Product = require('../model/product');
 
+// --- Authorization helper (CWE-639) ---
+// The cart owner is always the authenticated user (req.user.id from the JWT).
+// If the client also supplies a user id, it must match the token or the request is rejected.
+const isNotOwner = (req, suppliedId) =>
+    suppliedId !== undefined && suppliedId !== null && Number(suppliedId) !== Number(req.user.id);
+const FORBIDDEN = { message: 'Access denied. You do not have permission' };
+
 // Add item to cart
 exports.addToCart = async (req, res) => {
     const { product_id, quantity } = req.body;
@@ -23,13 +30,15 @@ exports.addToCart = async (req, res) => {
         await cart.save();
         res.status(200).json(cart);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Cart error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 // Get cart by user ID
 exports.getCart = async (req, res) => {
-    const { user_id } = req.params;
+    if (isNotOwner(req, req.params.user_id)) return res.status(403).json(FORBIDDEN);
+    const user_id = req.user.id;
     try {
         let cart = await Cart.findOne({ user_id });
         if (!cart) {
@@ -38,13 +47,16 @@ exports.getCart = async (req, res) => {
         }
         res.status(200).json(cart);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Cart error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 // Update cart item quantity
 exports.updateCartItem = async (req, res) => {
-    const { user_id, product_id, quantity } = req.body;
+    const { product_id, quantity } = req.body;
+    if (isNotOwner(req, req.body.user_id)) return res.status(403).json(FORBIDDEN);
+    const user_id = req.user.id;
     try {
         const cart = await Cart.findOne({ user_id });
         if (!cart) return res.status(404).json({ message: 'Cart not found' });
@@ -56,13 +68,16 @@ exports.updateCartItem = async (req, res) => {
         await cart.save();
         res.status(200).json(cart);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Cart error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 // Update total price
 exports.updateTotalPrice = async (req, res) => {
-    const { user_id, total_price } = req.body;
+    const { total_price } = req.body;
+    if (isNotOwner(req, req.body.user_id)) return res.status(403).json(FORBIDDEN);
+    const user_id = req.user.id;
     try {
         const cart = await Cart.findOne({ user_id });
         if (!cart) return res.status(404).json({ message: 'Cart not found' });
@@ -71,13 +86,16 @@ exports.updateTotalPrice = async (req, res) => {
         await cart.save();
         res.status(200).json(cart);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Cart error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 // Remove item
 exports.removeFromCart = async (req, res) => {
-    const { user_id, product_id } = req.body;
+    const { product_id } = req.body;
+    if (isNotOwner(req, req.body.user_id)) return res.status(403).json(FORBIDDEN);
+    const user_id = req.user.id;
     try {
         const cart = await Cart.findOne({ user_id });
         if (!cart) return res.status(404).json({ message: 'Cart not found' });
@@ -86,17 +104,20 @@ exports.removeFromCart = async (req, res) => {
         await cart.save();
         res.status(200).json(cart);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Cart error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 // Clear cart
 exports.clearCart = async (req, res) => {
-    const user_id = req.params.id;
+    if (isNotOwner(req, req.params.id)) return res.status(403).json(FORBIDDEN);
+    const user_id = req.user.id;
     try {
         await Cart.findOneAndDelete({ user_id });
         res.status(200).json({ message: 'Cart cleared successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Cart error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
