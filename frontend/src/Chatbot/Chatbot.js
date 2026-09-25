@@ -55,17 +55,12 @@ function Chatbot() {
     }
 
     try {
-      const response = await axios({
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDLUPtSpNZLeuogMKC4qjtXc3_Y49eJnrI`,
-        method: "post",
-        data: {
-          contents: [{ parts: [{ text: input }] }],
-        },
-      });
-      return (
-        response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        chatbotMessages["default"]
+      // CWE-798: the Gemini call is made by our backend, which holds the API key server-side
+      const response = await axios.post(
+        "http://localhost:3001/api/chatbot/message",
+        { message: input }
       );
+      return response.data?.reply || chatbotMessages["default"];
     } catch (error) {
       console.error("Error fetching response:", error);
       return "Sorry, I'm having trouble responding right now.";

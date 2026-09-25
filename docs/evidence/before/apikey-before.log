@@ -1,10 +1,10 @@
 ### Vuln #10 BEFORE-FIX evidence (CWE-798)
 
 ## 1. Key hardcoded in client source
-59:        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDLUPtSpNZLeuogMKC4qjtXc3_Y49eJnrI`,
+59:        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIza<REDACTED>`,
 
 ## 2. Only occurrence across frontend/src + backend (excluding node_modules)
-frontend/src/Chatbot/Chatbot.js:59:        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDLUPtSpNZLeuogMKC4qjtXc3_Y49eJnrI`,
+frontend/src/Chatbot/Chatbot.js:59:        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIza<REDACTED>`,
 
 ## 3. Present in git history (initial commit)
 822ee37 Old Repository  Initial Commit

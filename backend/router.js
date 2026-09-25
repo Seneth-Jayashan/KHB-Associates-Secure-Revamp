@@ -22,6 +22,7 @@ const reportRouter = require('./routes/reportRoutes');
 const notification = require('./routes/notificationRoutes');
 const promoCodeRoutes = require('./routes/PromoCodeRoutes');
 const gameRoutes = require('./routes/gameRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 router.use("/brands", brandRoutes); 
 router.use("/categories", categoryRoutes);
@@ -43,6 +44,7 @@ router.use("/chats", chatRouter);
 router.use("/notifications", notification);
 router.use("/promo", promoCodeRoutes);  
 router.use("/game", gameRoutes);   
+router.use("/chatbot", chatbotRoutes);
 
 
 module.exports = router;
