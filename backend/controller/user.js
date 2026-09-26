@@ -95,22 +95,28 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        // Generate JWT Token
-        const token = jwt.sign(
-            { id: user.user_id, role: user.role },
-            process.env.SECRET_KEY,
-            { expiresIn: "30m" }
-        );
+    // Generate JWT Token
+    const token = jwt.sign(
+        { id: user.user_id, role: user.role },
+        process.env.SECRET_KEY,
+        { expiresIn: "30m" }
+    );
 
 
+    // Store JWT in an HttpOnly cookie
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: false, // localhost uses HTTP during development
+        sameSite: "lax",
+        maxAge: 30 * 60 * 1000
+    });
 
-        // Send response with token
-        res.status(200).json({ 
-            message: "Login successful", 
-            token,
-            role: user.role,
-            id: user.user_id  
-        });
+    // Send response without exposing the JWT to JavaScript
+    res.status(200).json({
+        message: "Login successful",
+        role: user.role,
+        id: user.user_id
+    });
 
     } catch (err) {
         console.error("Login Error:", err.message);

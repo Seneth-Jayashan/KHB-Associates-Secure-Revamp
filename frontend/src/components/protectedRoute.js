@@ -1,25 +1,46 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const token = localStorage.getItem('token');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!token) {
-    return <Navigate to="/signin" />;
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        const response = await axios.get(
+          'http://localhost:3001/api/users/me',
+          {
+            withCredentials: true
+          }
+        );
+
+        setUser(response.data);
+      } catch (error) {
+        console.error('Authentication failed:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthentication();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
-  try {
-    const userRole = JSON.parse(atob(token.split('.')[1])).role;
-
-    if (!allowedRoles.includes(userRole)) {
-      return <Navigate to="/logout" />;
-    }
-
-    return children;
-  } catch (error) {
-    console.error('Invalid token:', error);
-    return <Navigate to="/signin" />;
+  if (!user) {
+    return <Navigate to="/signin" replace />;
   }
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/logout" replace />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

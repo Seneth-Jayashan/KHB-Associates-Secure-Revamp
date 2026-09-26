@@ -33,19 +33,22 @@ export default function SignIn() {
         password: formData.password,
       }
 
-      const response = await axios.post('http://localhost:3001/api/users/signin', formDataToSend, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.post(
+          'http://localhost:3001/api/users/signin',
+          formDataToSend,
+          {
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              withCredentials: true
+          }
+      );
 
-      localStorage.setItem('token', response.data.token);
       Swal.fire({
-        title: "Success!",
-        text: "You Successfully Logged in to Your Account!",
-        icon: "success",
+          title: "Success!",
+          text: "You Successfully Logged in to Your Account!",
+          icon: "success",
       });
-      setLoading(false);
 
       switch(response.data.role){
         case 'admin':

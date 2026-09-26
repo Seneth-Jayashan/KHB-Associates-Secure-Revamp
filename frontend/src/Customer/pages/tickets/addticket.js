@@ -20,44 +20,52 @@ function AddTicket() {
   });
 
   const [userData, setUserData] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch authenticated user data
   const fetchUserData = async () => {
     try {
-      const response = await axios.get("http://localhost:3001/api/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "http://localhost:3001/api/users/me",
+        {
+          withCredentials: true
+        }
+      );
+
       setUserData(response.data);
+
     } catch (err) {
-      console.error("Error fetching user data:", err);
+      console.error(
+        "Error fetching user data:",
+        err
+      );
+
       if (err.response?.status === 401) {
         alert("Session expired. Please log in again.");
-        localStorage.removeItem("token");
-        setToken(null);
         navigate("/logout");
       }
+
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      fetchUserData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [token]);
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     if (userData) {
-      setInput({
-        ...input,
-        name: `${userData.firstName || ""} ${userData.lastName || ""}`.trim(),
+      setInput((previousInput) => ({
+        ...previousInput,
+        user_id: userData.user_id,
+        name:
+          `${userData.firstName || ""} ${
+            userData.lastName || ""
+          }`.trim(),
         gmail: userData.email || "",
         phoneNumber: userData.phone || "",
-      });
+      }));
     }
   }, [userData]);
 
@@ -70,83 +78,148 @@ function AddTicket() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     axios
-      .post("http://localhost:3001/api/tickets", input)
-      .then((response) => {
+      .post(
+        "http://localhost:3001/api/tickets",
+        input,
+        {
+          withCredentials: true
+        }
+      )
+      .then(() => {
         navigate("/customer-dashboard");
       })
       .catch((error) => {
-        console.error("There was an error creating the ticket!", error);
+        console.error(
+          "There was an error creating the ticket!",
+          error
+        );
       });
   };
 
-  if (isLoading) return <div>Loading user data...</div>;
+  if (isLoading) {
+    return <div>Loading user data...</div>;
+  }
 
   return (
     <div>
+
       <div className="containerT">
-        <h2 className="titleT">Add New Ticket</h2>
+
+        <h2 className="titleT">
+          Add New Ticket
+        </h2>
+
         <form onSubmit={handleSubmit}>
+
           <div className="input-boxT">
-            <label className="labelT">Full Name</label>
+            <label className="labelT">
+              Full Name
+            </label>
+
             <input
               type="text"
               className="fieldT"
               placeholder="Enter your name"
               name="name"
               value={input.name}
-              readOnly // Make the field read-only
+              readOnly
             />
           </div>
 
           <div className="input-boxT">
-            <label className="labelT">Email Address</label>
+            <label className="labelT">
+              Email Address
+            </label>
+
             <input
               type="email"
               name="gmail"
               className="fieldT"
               placeholder="Enter your email"
               value={input.gmail}
-              readOnly // Make the field read-only
+              readOnly
             />
           </div>
 
           <div className="input-boxT">
-            <label className="labelT">Phone Number</label>
+            <label className="labelT">
+              Phone Number
+            </label>
+
             <input
               type="tel"
               className="fieldT"
               placeholder="Enter your Phone Number"
               name="phoneNumber"
               value={input.phoneNumber}
-              readOnly // Make the field read-only
+              readOnly
             />
           </div>
 
           <div className="input-boxT">
-            <label className="labelT">Categories</label>
+            <label className="labelT">
+              Categories
+            </label>
+
             <select
               name="Categories"
               className="fieldT"
               value={input.Categories}
               onChange={handleChange}
             >
-              <option value="Logistics & Shipping">📦 Logistics & Shipping</option>
-              <option value="Technical Support">🛠️ Technical Support</option>
-              <option value="Orders & Invoices">📑 Orders & Invoices</option>
-              <option value="Payments & Billing">💰 Payments & Billing</option>
-              <option value="Returns & Refunds">🔁 Returns & Refunds</option>
-              <option value="After-Sales Support">👨‍🔧 After-Sales Support</option>
-              <option value="Product Information">🧠 Product Information</option>
-              <option value="Machine Renting">💼 Machine Renting</option>
-              <option value="Account & Sales">🧑‍💼 Account & Sales</option>
-              <option value="Feedback & Complaints">🎯 Feedback & Complaints</option>
-              <option value="Website & System Issues">🌐 Website & System Issues</option>
+              <option value="Logistics & Shipping">
+                📦 Logistics & Shipping
+              </option>
+
+              <option value="Technical Support">
+                🛠️ Technical Support
+              </option>
+
+              <option value="Orders & Invoices">
+                📑 Orders & Invoices
+              </option>
+
+              <option value="Payments & Billing">
+                💰 Payments & Billing
+              </option>
+
+              <option value="Returns & Refunds">
+                🔁 Returns & Refunds
+              </option>
+
+              <option value="After-Sales Support">
+                👨‍🔧 After-Sales Support
+              </option>
+
+              <option value="Product Information">
+                🧠 Product Information
+              </option>
+
+              <option value="Machine Renting">
+                💼 Machine Renting
+              </option>
+
+              <option value="Account & Sales">
+                🧑‍💼 Account & Sales
+              </option>
+
+              <option value="Feedback & Complaints">
+                🎯 Feedback & Complaints
+              </option>
+
+              <option value="Website & System Issues">
+                🌐 Website & System Issues
+              </option>
             </select>
           </div>
 
           <div className="input-boxT">
-            <label className="labelT">Your Message</label>
+            <label className="labelT">
+              Your Message
+            </label>
+
             <textarea
               name="message"
               className="field textareaT"
@@ -158,23 +231,41 @@ function AddTicket() {
           </div>
 
           <div className="input-boxT">
-            <label className="labelT">Priority</label>
+            <label className="labelT">
+              Priority
+            </label>
+
             <select
               name="priority"
               className="fieldT"
               value={input.priority}
               onChange={handleChange}
             >
-              <option value="Low">🟢 Low</option>
-              <option value="Medium">🟡 Medium</option>
-              <option value="High">🔴 High</option>
+              <option value="Low">
+                🟢 Low
+              </option>
+
+              <option value="Medium">
+                🟡 Medium
+              </option>
+
+              <option value="High">
+                🔴 High
+              </option>
             </select>
           </div>
-          <button type="submit" className="btnT">
+
+          <button
+            type="submit"
+            className="btnT"
+          >
             Add Ticket
           </button>
+
         </form>
+
       </div>
+
     </div>
   );
 }
