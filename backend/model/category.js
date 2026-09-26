@@ -24,15 +24,20 @@ const categorySchema = new Schema({
 });
 
 // Pre-save middleware to auto-increment `category_id`
-categorySchema.pre('save', async function () {
-  if (!this.isNew) return; // Only run when creating a new document
+categorySchema.pre('save', async function (next) {
+  if (!this.isNew) return next(); // Only run when creating a new document
 
-  const counter = await Counter.findOneAndUpdate(
-    { name: "category_id" },
-    { $inc: { value: 1 } },
-    { returnDocument: 'after', upsert: true } // Create a new counter document if it doesn't exist
-  );
-  this.category_id = counter.value; // Assign the incremented value to `category_id`
+  try {
+    const counter = await Counter.findOneAndUpdate(
+      { name: "category_id" },
+      { $inc: { value: 1 } },
+      { new: true, upsert: true } // Create a new counter document if it doesn't exist
+    );
+    this.category_id = counter.value; // Assign the incremented value to `category_id`
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 const Category = mongoose.model("category", categorySchema);

@@ -1,14 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const promoCodeController = require("../controller/PromoCode");
-const authMiddleware = require('../middleware/authMiddleware');
 
-router.get("/auto-generate", authMiddleware(['admin']), promoCodeController.autoGeneratePromo);
+router.get("/auto-generate", promoCodeController.autoGeneratePromo);
 
 router.post("/validate", promoCodeController.validatePromo);
 
-router.get("/get", authMiddleware(['admin']), promoCodeController.getAllPromos);
+router.get("/get", promoCodeController.getAllPromos);
 
-router.delete("/delete/:code", authMiddleware(['admin']), promoCodeController.deletePromo);
+router.delete("/delete/:code", promoCodeController.deletePromo);
 
 module.exports = router;

@@ -1,13 +1,11 @@
 const contact = require("../model/contactModel");
 const nodemailer = require("nodemailer");
-const env = require('dotenv')
-env.config()
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: "sajanaanupama123@gmail.com", // Replace with your email
+    pass: "melc veit raso vsqm", // Replace with your app password
   },
 });
 
@@ -38,10 +36,10 @@ const addMs = async (req, res, next) => {
   try {
     Ms = new contact({ name, gmail, phoneNumber, message });
     await Ms.save();
-    // Send an email to the support admin
+     // Send an email to the support admin
     const mailOptions = {
       from: `"${name}" <${gmail}>`, // Customer's name and email
-      to: process.env.EMAIL_USER, // Replace with the support admin's email
+      to: "sajanaanupama123@gmail.com", // Replace with the support admin's email
       replyTo: gmail, // This makes replies go to the user
       subject: "New Contact Us Form Submission",
       text: `You have received a new message from the Contact Us form:\n\n
@@ -59,7 +57,7 @@ const addMs = async (req, res, next) => {
         console.log("Email sent to admin: " + info.response);
       }
     });
-
+ 
   } catch (err) {
     console.log(err);
   }
@@ -110,7 +108,7 @@ const replyUser = async (req, res, next) => {
 
     // Send an email to the user with the reply
     const mailOptions = {
-      from: `"KHB Associates pvt ltd" <${process.env.EMAIL_USER}> `,
+      from: "KHB Associates pvt ltd <sajanaanupama123@gmail.com> ",
       to: gmail, // Send email to the user's Gmail
       subject: "Reply to Your Contact Form Submission",
       text: `Dear ${name},\n\nThank you for reaching out. 

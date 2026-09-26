@@ -6,22 +6,22 @@ const authMiddleware = require('../middleware/authMiddleware');
 const deliverController = require('../controller/deliver'); // Make sure the path is correct
 
 // Define your routes
-router.get('/delivers', authMiddleware(['admin']), deliverController.getDeliver); 
-router.get('/deliver', authMiddleware(['admin', 'deliver']), deliverController.getDeliverById);
-router.get('/deliveries', authMiddleware(['admin', 'deliver']), deliverController.getDeliveries);
-router.get('/alldeliveries', authMiddleware(['admin', 'deliver']), deliverController.getAllDeliveries);
-router.get('/deliverycount', authMiddleware(['admin']), deliverController.getDeliveryCount);
-router.get('/analytics', authMiddleware(['admin']), deliverController.getDeliveryAnalytics);
+router.get('/delivers', deliverController.getDeliver); 
+router.get('/deliver',deliverController.getDeliverById);
+router.get('/deliveries', deliverController.getDeliveries);
+router.get('/alldeliveries', deliverController.getAllDeliveries);
+router.get('/deliverycount', deliverController.getDeliveryCount);
+router.get('/analytics', deliverController.getDeliveryAnalytics);
 
 
-router.post('/signup', authMiddleware(['admin']), upload.single("profile_image"), deliverController.addDeliver);
+router.post('/signup', upload.single("profile_image"), deliverController.addDeliver);
 
-router.put('/updatedeliver', authMiddleware(['admin', 'deliver']), upload.single("profile_image"), deliverController.updateDeliver);
-router.put('/updatepassword', authMiddleware(['admin', 'deliver']), deliverController.updatePassword);
+router.put('/updatedeliver', upload.single("profile_image"), deliverController.updateDeliver);
+router.put('/updatepassword', deliverController.updatePassword);
 
-router.put('/updateorderstatus/:order_id', authMiddleware(['admin', 'deliver']), deliverController.updateOrderStatus);
+router.put('/updateorderstatus/:order_id', deliverController.updateOrderStatus);
 
-router.delete('/deletecount', authMiddleware(['admin']), deliverController.deleteStat);
+router.delete('/deletecount', deliverController.deleteStat);
 
 
 // Export the router instance

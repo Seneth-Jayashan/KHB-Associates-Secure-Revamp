@@ -15,7 +15,6 @@ const userSchema = new Schema({
     lastName: {type: String,required: true},
     email: {type: String,required: true,unique: true},
     password: {type: String,required: true},
-    googleId: {type: String, unique: true, sparse: true},
     profilePic: {type: String},
     role: {type: String,enum: ['admin', 'customer', 'inventory_manager', 'customer_supporter', 'deliver'],default: 'customer'},
     address: {type: String},
@@ -30,15 +29,20 @@ const userSchema = new Schema({
 
 
 // Pre-save middleware to auto-increment `user_id`
-userSchema.pre('save', async function () {
-  if (!this.isNew) return; // Only run when creating a new document
+userSchema.pre('save', async function (next) {
+  if (!this.isNew) return next(); // Only run when creating a new document
 
-  const counter = await Counter.findOneAndUpdate(
-    { name: "user_id" },
-    { $inc: { value: 1 } },
-    { returnDocument: 'after', upsert: true } // Create a new counter document if it doesn't exist
-  );
-  this.user_id = counter.value; // Assign the incremented value to `user_id`
+  try {
+    const counter = await Counter.findOneAndUpdate(
+      { name: "user_id" },
+      { $inc: { value: 1 } },
+      { new: true, upsert: true } // Create a new counter document if it doesn't exist
+    );
+    this.user_id = counter.value; // Assign the incremented value to `user_id`
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 

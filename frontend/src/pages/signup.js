@@ -210,31 +210,15 @@ export default function SignUp() {
             {/* Register Button */}
             <button
                 type="submit"
-                className="bg-purple-600 text-white p-3 w-full rounded font-bold hover:bg-purple-950 transition-all duration-300 mt-6"
+                className="bg-purple-600 text-white p-3 rounded font-bold hover:bg-purple-950 transition-all duration-300"
             >
                 Register
             </button>
             </form>
 
-            {/* OR Divider */}
-            <div className="flex items-center w-full mt-6">
-              <div className="flex-1 border-t border-gray-300"></div>
-              <span className="px-3 text-gray-500 text-sm font-semibold">OR</span>
-              <div className="flex-1 border-t border-gray-300"></div>
-            </div>
 
-            {/* Google Signup Button */}
-            <a
-              href="http://localhost:3001/api/auth/google"
-              className="mt-6 flex items-center justify-center w-full bg-white border border-gray-300 text-gray-700 p-3 rounded font-bold hover:bg-gray-50 transition-all duration-300 shadow-sm"
-            >
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" className="w-5 h-5 mr-3" />
-              Sign up with Google
-            </a>
-
-
-          {/* Signin Link */}
-          <p className="text-xs text-gray-400 mt-6">
+          {/* Signup Link */}
+          <p className="text-xs text-gray-400 mt-4">
            Already have an account?{' '}
             <a href="/signin" className="text-purple-700 font-bold hover:underline">
               Signin

@@ -6,18 +6,17 @@ const {
   getAllOTSalary,
   deleteOTSalary,
 } = require("../controller/salary");
-const authMiddleware = require('../middleware/authMiddleware');
 
 // Create a new OT and Salary entry
-router.post("/", authMiddleware(['admin']), createOTSalary);
+router.post("/", createOTSalary);
 
 // Update OT and Salary entry
-router.put("/:id", authMiddleware(['admin']), updateOTSalary);
+router.put("/:id", updateOTSalary);
 
 // Get all OT and Salary entries
-router.get("/", authMiddleware(['admin']), getAllOTSalary);
+router.get("/", getAllOTSalary);
 
 // Delete OT and Salary entry
-router.delete("/:id", authMiddleware(['admin']), deleteOTSalary);
+router.delete("/:id", deleteOTSalary);
 
 module.exports = router;
