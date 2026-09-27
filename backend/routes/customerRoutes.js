@@ -11,6 +11,7 @@ router.get('/users', customerController.getCustomers);
 router.get('/user',customerController.getCustomerById);
 router.post('/signup', upload.single("profile_image"), customerController.addCustomer);
 router.put('/updatecustomer', upload.single("profile_image"), customerController.updateCustomer);
+
 router.put(
     '/updatepassword',
     authMiddleware(['customer']),
