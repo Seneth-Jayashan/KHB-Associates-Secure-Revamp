@@ -6,7 +6,7 @@ require("dotenv").config();
 
 exports.getUsers = async(req,res) => {
     try {
-        const users = await User.find();
+        const users = await User.find().select('-password -token');
         if(!users) {
             return res.status(404).json({message: "No users found"});
         }
@@ -20,7 +20,7 @@ exports.getUsers = async(req,res) => {
 exports.getUserById = async(req, res) => {
     try {
         const id = req.query.id;
-        const user = await User.findOne({user_id:id});
+        const user = await User.findOne({user_id:id}).select('-password -token');
         if(!user) {
             return res.status(404).json({message: "User not found"});
         }
@@ -55,7 +55,7 @@ exports.resetPassword = async(req,res) => {
         const {token} = req.params;
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-        const user = await User.findOne({email: decoded.email}).select("-password");
+        const user = await User.findOne({email: decoded.email}).select("-password -token");
         if(!user) return res.status(400).json({message: 'Invalid Token'});
 
         const password = req.body.password;
@@ -129,7 +129,7 @@ exports.authentication = async (req, res) => {
         return res.status(401).json({ message: "Unauthorized: No user data found" });
       }
   
-      const user = await User.findOne({user_id:req.user.id}).select("-password"); 
+      const user = await User.findOne({user_id:req.user.id}).select("-password -token"); 
   
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -148,7 +148,7 @@ exports.verifyemail = async(req, res) => {
     const {token} = req.params;
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-    const user = await User.findOne({email: decoded.email}).select("-password");
+    const user = await User.findOne({email: decoded.email}).select("-password -token");
     if(!user) return res.status(400).json({message: 'Invalid Token'});
 
     user.isVerified = true;
@@ -156,6 +156,7 @@ exports.verifyemail = async(req, res) => {
 
     res.json({message: "Email verified successfully!"});
   } catch (error) {
+    console.error(error);
     res.status(400).json({message: "Invalid or Expired token"});
   }
 };
@@ -183,9 +184,8 @@ exports.updateUser = async(req,res) => {
             profilePic , 
         }
 
-        const user = await User.findOneAndUpdate({user_id},updateData, {new:true});
+        const user = await User.findOneAndUpdate({user_id},updateData, {new:true}).select('-password -token');
         if(!user) return res.status(404).json("User not found");
-        console.log(user);
         res.json({ message: "User updated successfully", user });
     }catch (error) {
         console.error(error);
