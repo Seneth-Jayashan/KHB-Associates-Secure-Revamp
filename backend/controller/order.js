@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const Order = require("../model/order");
 const Cart = require("../model/Cart");
 const User = require("../model/user");
+const Product = require("../model/product");
 const Notification = require("../model/notification"); // Import Notification
 const Delivery = require("../model/delivery");
 
@@ -11,6 +12,46 @@ const isAdmin = (req) => req.user && req.user.role === "admin";
 const ownsUserId = (req, userId) =>
   isAdmin(req) || Number(userId) === Number(req.user.id);
 const FORBIDDEN = { message: "Access denied. You do not have permission" };
+
+// --- Price integrity (CWE-840 Business Logic Errors: order price tampering) ---
+// The order total is ALWAYS computed here from the authoritative Product price and the
+// server-held Cart quantity. A client-supplied total_price (or per-item price) is never
+// read or trusted; see createOrder below, which does not destructure total_price at all.
+class OrderValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.status = 400;
+  }
+}
+
+const calculateServerOrderTotal = async (cartItems) => {
+  for (const item of cartItems) {
+    if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+      throw new OrderValidationError(
+        `Invalid quantity for product ${item.product_id}`
+      );
+    }
+  }
+
+  const productIds = cartItems.map((item) => Number(item.product_id));
+  const products = await Product.find({ product_id: { $in: productIds } });
+  const priceByProductId = new Map(
+    products.map((p) => [p.product_id, p.product_price])
+  );
+
+  let total = 0;
+  for (const item of cartItems) {
+    const price = priceByProductId.get(Number(item.product_id));
+    if (typeof price !== "number") {
+      throw new OrderValidationError(
+        `Product ${item.product_id} in your cart is no longer available`
+      );
+    }
+    total += price * item.quantity;
+  }
+  // Avoid floating-point drift (e.g. 19.999999999998)
+  return Math.round(total * 100) / 100;
+};
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
@@ -38,9 +79,11 @@ const sendEmail = (to, subject, text, html) => {
 // CREATE ORDER
 exports.createOrder = async (req, res) => {
   try {
-    // Owner is the authenticated user; client-supplied user_id/email are ignored
+    // Owner is the authenticated user; client-supplied user_id/email are ignored.
+    // SECURITY (CWE-840): total_price is intentionally NOT read from req.body here.
+    // The stored total is always calculated server-side, below, from Product prices.
     const user_id = req.user.id;
-    const { shipping_address, payment_method, total_price } = req.body;
+    const { shipping_address, payment_method } = req.body;
     if (!shipping_address || !payment_method)
       return res.status(400).json({ message: "All fields are required" });
 
@@ -58,14 +101,23 @@ exports.createOrder = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     const email = user.email;
 
+    let serverTotal;
+    try {
+      serverTotal = await calculateServerOrderTotal(cart.items);
+    } catch (err) {
+      if (err instanceof OrderValidationError) {
+        return res.status(400).json({ message: err.message });
+      }
+      throw err;
+    }
+
     const newOrder = new Order({
       user_id: Number(user_id),
       items: cart.items.map((item) => ({
         product_id: Number(item.product_id),
         quantity: item.quantity,
-        price: item.price,
       })),
-      total_price: total_price,
+      total_price: serverTotal,
       shipping_address,
       status: "pending",
       payment_status: payment_method === "COD" ? "pending" : "paid",
