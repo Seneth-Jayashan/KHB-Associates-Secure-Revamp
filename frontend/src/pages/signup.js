@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import axios from "axios";
 import Vector from '../assets/login image.png';
 import Logo from '../assets/logo 4.png';
@@ -20,6 +20,8 @@ export default function SignUp() {
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const allowedImageTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  const allowedImageExtensions = ["jpg", "jpeg", "png", "webp"];
 
   // Handle text input change
   const handleChange = (e) => {
@@ -28,7 +30,21 @@ export default function SignUp() {
 
   // Handle image file change
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    const fileExtension = selectedFile?.name.split(".").pop()?.toLowerCase();
+
+    if (
+      selectedFile &&
+      allowedImageTypes.includes(selectedFile.type) &&
+      allowedImageExtensions.includes(fileExtension)
+    ) {
+      setImage(selectedFile);
+      setError("");
+    } else {
+      setImage(null);
+      e.target.value = "";
+      setError("Please select a JPEG, PNG, JPG, or WEBP image.");
+    }
   };
 
   // Handle form submission
@@ -133,7 +149,7 @@ export default function SignUp() {
                     <div className="col w-full lg:w-full">
                         <input 
                           type="file" 
-                          accept="image/*" 
+                          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" 
                           onChange={handleImageChange} 
                           className="p-2 w-full bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-purple-600"
                           required

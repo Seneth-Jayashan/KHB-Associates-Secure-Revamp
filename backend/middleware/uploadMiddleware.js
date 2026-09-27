@@ -11,12 +11,15 @@ const storage = multer.diskStorage({
 
 // Only allow common image types to be uploaded as profile pictures
 const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
 const fileFilter = (req, file, cb) => {
-    if (allowedTypes.includes(file.mimetype)) {
+    const extension = path.extname(file.originalname).toLowerCase();
+
+    if (allowedTypes.includes(file.mimetype) && allowedExtensions.includes(extension)) {
         cb(null, true);
     } else {
-        cb(new Error("Invalid file type. Only JPEG, PNG, and WEBP images are allowed."), false);
+        cb(new Error("Invalid file type. Only JPG, JPEG, PNG, and WEBP images are allowed."), false);
     }
 };
 
