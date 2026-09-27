@@ -5,9 +5,10 @@ import Nav from '../components/navigation';
 
 const Checkout = ({ userId, cartTotal }) => {
   const [cart, setCart] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [discountedPrice, setDiscountedPrice] = useState(0);
+  // Pricing always comes from the server (/api/orders/quote), never computed here
+  const [quote, setQuote] = useState(null);
+  const [appliedPromo, setAppliedPromo] = useState('');
+  const [placedOrder, setPlacedOrder] = useState(null);
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
@@ -52,29 +53,23 @@ const Checkout = ({ userId, cartTotal }) => {
     try {
       const response = await axios.get(`http://localhost:3001/api/cart/getcart/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
       setCart(response.data);
-
-      const productDetails = await Promise.all(
-        response.data.items.map(async (item) => {
-          const res = await axios.get(`http://localhost:3001/api/products/product?id=${item.product_id}`);
-          return { ...item, product: res.data };
-        })
-      );
-
-      calculatePrices(productDetails);
+      if (response.data.items?.length) {
+        setQuote(await fetchQuote(''));
+      }
     } catch (err) {
       console.error('Error fetching cart:', err);
       setFormError({ general: 'Error fetching cart.' });
     }
   };
 
-  const calculatePrices = (productDetails) => {
-    setProducts(productDetails);
-
-    const total = productDetails.reduce((acc, item) => {
-      return acc + (item.product?.product_price || 0) * item.quantity;
-    }, 0);
-
-    setTotalPrice(total);
+  // Server prices the cart (and validates the promo code) exactly as order creation will
+  const fetchQuote = async (code) => {
+    const response = await axios.post(
+      'http://localhost:3001/api/orders/quote',
+      { promo_code: code },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
   };
 
   useEffect(() => {
@@ -99,18 +94,26 @@ const Checkout = ({ userId, cartTotal }) => {
   const handlePromoCodeApply = async () => {
     setPromoError('');
     setPromoSuccess('');
+    const code = promoCode.trim();
+    if (!code) {
+      setPromoError('Please enter a promo code.');
+      return;
+    }
     try {
-      const response = await axios.post('http://localhost:3001/api/game/redeem', {id:userData.user_id, promoCode: promoCode });
-      if (response.data.discount) {
-        const discount = (totalPrice * response.data.discount) / 100;
-        setDiscountedPrice(discount);
-        setPromoSuccess('Promo code applied successfully!');
-      } else {
-        setPromoError(response.data.message || 'Invalid promo code.');
-      }
+      const pricing = await fetchQuote(code);
+      setQuote(pricing);
+      setAppliedPromo(pricing.promo_code || '');
+      setPromoSuccess(`Promo code applied: ${pricing.discount_percent}% off`);
     } catch (err) {
       console.error('Error validating promo code:', err);
-      setPromoError('Failed to validate promo code.');
+      setPromoError(err.response?.data?.message || 'Failed to validate promo code.');
+      // Fall back to the undiscounted server price
+      setAppliedPromo('');
+      try {
+        setQuote(await fetchQuote(''));
+      } catch (quoteErr) {
+        console.error('Error refreshing price:', quoteErr);
+      }
     }
   };
 
@@ -164,33 +167,32 @@ const Checkout = ({ userId, cartTotal }) => {
       formData.append('user_id', userData.user_id);
       formData.append('email', userData.email);
       formData.append('shipping_address', `${form.fullName}, ${form.address}, ${form.phone}`);
-      formData.append('total_price', discountedPrice !== 0 ? totalPrice - discountedPrice : totalPrice);
       formData.append('payment_method', paymentMethod);
-      
+      // Only the promo code is sent - no prices, totals or discount amounts.
+      // Items come from the server-side cart.
+      if (appliedPromo) {
+        formData.append('promo_code', appliedPromo);
+      }
 
       if (paymentMethod === 'Payment Slip') {
         formData.append('payment_slip', paymentSlip);
       }
 
-      cart.items.forEach((item, index) => {
-        formData.append(`items[${index}][product_id]`, item.product_id);
-        formData.append(`items[${index}][quantity]`, item.quantity);
-        formData.append(`items[${index}][price]`, item.product?.product_price || 0);
-      });
-
-      await axios.post('http://localhost:3001/api/orders/create', formData, {
+      const response = await axios.post('http://localhost:3001/api/orders/create', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
       });
+      const order = response.data.order;
+      setPlacedOrder(order);
 
-      await axios.post('http://localhost:3001/api/game/add', {id: userData.user_id, totalPrice: totalPrice});
+      await axios.post('http://localhost:3001/api/game/add', {id: userData.user_id, totalPrice: order.subtotal_price});
 
       setShowSuccessModal(true);
     } catch (err) {
       console.error('Error placing order:', err);
-      setFormError({ general: 'Order failed. Please try again.' });
+      setFormError({ general: err.response?.data?.message || 'Order failed. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -284,19 +286,26 @@ const Checkout = ({ userId, cartTotal }) => {
         {/* Order Summary */}
         <div className="bg-white rounded shadow p-4 mb-6">
           <h2 className="font-semibold text-lg mb-2">Order Summary</h2>
-          <div className="flex justify-between mb-1">
-            <span>Machines ({cart.items.length})</span>
-            <span>LKR {totalPrice.toLocaleString()}</span>
-          </div>
-          {discountedPrice != 0 && (
-            <div className="flex justify-between mb-1 text-green-600">
-              <span>Discount Applied</span>
-              <span>- LKR {(totalPrice - discountedPrice).toLocaleString()}</span>
-            </div>
+          {quote ? (
+            <>
+              <div className="flex justify-between mb-1">
+                <span>Machines ({cart.items.length})</span>
+                <span>LKR {quote.subtotal_price.toLocaleString()}</span>
+              </div>
+              {quote.discount_amount > 0 && (
+                <div className="flex justify-between mb-1 text-green-600">
+                  <span>Discount ({quote.promo_code}, {quote.discount_percent}%)</span>
+                  <span>- LKR {quote.discount_amount.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="font-bold text-lg">
+                Total: LKR {quote.total_price.toLocaleString()}
+              </div>
+            </>
+          ) : (
+            <p className="text-gray-500">Calculating total...</p>
           )}
-          <div className="font-bold text-lg">
-            Total: LKR {(totalPrice - discountedPrice).toLocaleString()}
-          </div>
+          {formError.general && <p className="text-red-500 text-sm mt-2">{formError.general}</p>}
         </div>
 
         {/* Payment Options */}
@@ -360,7 +369,12 @@ const Checkout = ({ userId, cartTotal }) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
               <h2 className="text-xl font-semibold text-green-600 mb-2">Order Placed!</h2>
-              <p className="mb-4">Your order has been placed successfully.</p>
+              <p className="mb-2">Your order has been placed successfully.</p>
+              {placedOrder && (
+                <p className="mb-4 font-semibold">
+                  Total: LKR {placedOrder.total_price.toLocaleString()}
+                </p>
+              )}
               <button
                 onClick={() => navigate('/shop')}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full"

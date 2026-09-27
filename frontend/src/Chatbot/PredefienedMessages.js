@@ -1,15 +1,15 @@
 export const chatbotMessages = [
   {
     prompt: "Hi",
-    message: "Welcome to KHB. <br> My name is E. <br>How may I help you?",
+    message: "Welcome to KHB.\nMy name is E.\nHow may I help you?",
   },
   {
     prompt: "Hello",
-    message: "Welcome to KHB. <br> My name is E. <br>How may I help you?",
+    message: "Welcome to KHB.\nMy name is E.\nHow may I help you?",
   },
   {
     prompt: "How Are You",
-    message: "I am a fine,<br> always ready to assist you! ",
+    message: "I am a fine,\nalways ready to assist you! ",
   },
   {
     prompt: "Bye",

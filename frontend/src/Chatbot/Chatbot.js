@@ -186,10 +186,10 @@ function Chatbot() {
                   {msg.image ? (
                     <img src={msg.image} alt="Uploaded" />
                   ) : (
-                    <p
-                      className="message-text"
-                      dangerouslySetInnerHTML={{ __html: msg.text }}
-                    />
+                    // CWE-79: bot (AI) and user text is rendered as plain text, never as HTML,
+                    // so markup like <img onerror> or <script> in a reply is shown literally.
+                    // Line breaks are kept by white-space: pre-wrap on .message-text.
+                    <p className="message-text">{msg.text}</p>
                   )}
                 </div>
 

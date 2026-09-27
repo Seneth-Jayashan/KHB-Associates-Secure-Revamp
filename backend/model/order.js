@@ -10,7 +10,12 @@ const orderSchema = new Schema({
             quantity: { type: Number, required: true, min: 1 }
         }
     ],
-    total_price: { type: Number, required: true },
+    // Pricing breakdown - all computed server-side (see calculateServerOrderPricing in controller/order.js)
+    subtotal_price: { type: Number, min: 0 },      // original total before discount
+    promo_code: { type: String, default: null },
+    discount_percent: { type: Number, min: 0, max: 100, default: 0 },
+    discount_amount: { type: Number, min: 0, default: 0 },
+    total_price: { type: Number, required: true, min: 0 }, // final amount payable
     status: { type: String, enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
     shipping_address: { type: String, required: true },
     payment_status: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },

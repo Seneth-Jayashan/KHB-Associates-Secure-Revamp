@@ -10,6 +10,9 @@ const uploadMiddleware = require('../middleware/uploadMiddleware');
 // Create a new order (with payment slip upload) - customers only
 router.post('/create', authMiddleware(['customer']), uploadMiddleware.single('payment_slip'), orderController.createOrder);
 
+// Price the caller's cart (with optional promo code) using the same logic as /create - customers only
+router.post('/quote', authMiddleware(['customer']), orderController.getOrderQuote);
+
 // Get orders for a specific user - owner (customer) or admin
 router.get('/user/:user_id', authMiddleware(['customer', 'admin']), orderController.getUserOrders);
 

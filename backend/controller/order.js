@@ -3,6 +3,7 @@ const Order = require("../model/order");
 const Cart = require("../model/Cart");
 const User = require("../model/user");
 const Product = require("../model/product");
+const PromoCode = require("../model/promoCode");
 const Notification = require("../model/notification"); // Import Notification
 const Delivery = require("../model/delivery");
 
@@ -23,6 +24,8 @@ class OrderValidationError extends Error {
     this.status = 400;
   }
 }
+
+const roundCurrency = (amount) => Math.round(amount * 100) / 100;
 
 const calculateServerOrderTotal = async (cartItems) => {
   for (const item of cartItems) {
@@ -50,7 +53,74 @@ const calculateServerOrderTotal = async (cartItems) => {
     total += price * item.quantity;
   }
   // Avoid floating-point drift (e.g. 19.999999999998)
-  return Math.round(total * 100) / 100;
+  return roundCurrency(total);
+};
+
+// --- Promo code / loyalty discount (CWE-840) ---
+// The client sends ONLY the promo code string. The discount rate comes from the
+// authenticated user's loyalty level in the database; any client-supplied discount,
+// percentage or total is never read.
+const LOYALTY_DISCOUNT_PERCENT = { Silver: 5, Gold: 10, Platinum: 15 };
+// Also rejects non-strings: multipart bodies turn promo_code[$ne]=x into an object,
+// which would otherwise be a NoSQL operator injection into PromoCode.findOne.
+const PROMO_CODE_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
+
+const resolvePromoDiscount = async (rawCode, user) => {
+  if (rawCode === undefined || rawCode === null) return null;
+  if (typeof rawCode !== "string") {
+    throw new OrderValidationError("Invalid promo code");
+  }
+  const code = rawCode.trim();
+  if (!code) return null;
+  if (!PROMO_CODE_PATTERN.test(code)) {
+    throw new OrderValidationError("Invalid promo code");
+  }
+
+  const promo = await PromoCode.findOne({ code });
+  if (!promo || !promo.isActive) {
+    throw new OrderValidationError("Invalid promo code");
+  }
+  if (promo.expiresAt && new Date() >= promo.expiresAt) {
+    throw new OrderValidationError("Promo code has expired");
+  }
+
+  const percent = LOYALTY_DISCOUNT_PERCENT[user.user_level];
+  if (!percent) {
+    throw new OrderValidationError(
+      "Your loyalty level is not eligible for a promo discount"
+    );
+  }
+
+  // Usage limit: each customer may use a given code once (cancelled orders don't count)
+  const alreadyUsed = await Order.exists({
+    user_id: Number(user.user_id),
+    promo_code: code,
+    status: { $ne: "cancelled" },
+  });
+  if (alreadyUsed) {
+    throw new OrderValidationError("You have already used this promo code");
+  }
+
+  return { code, percent };
+};
+
+// Single source of truth for order pricing, used by both the checkout quote and
+// createOrder, so the total the customer sees is exactly the total that is stored.
+const calculateServerOrderPricing = async (cartItems, user, rawPromoCode) => {
+  const subtotal_price = await calculateServerOrderTotal(cartItems);
+  const promo = await resolvePromoDiscount(rawPromoCode, user);
+  const discount_percent = promo ? promo.percent : 0;
+  const discount_amount = Math.min(
+    subtotal_price,
+    roundCurrency((subtotal_price * discount_percent) / 100)
+  );
+  return {
+    subtotal_price,
+    promo_code: promo ? promo.code : null,
+    discount_percent,
+    discount_amount,
+    total_price: Math.max(0, roundCurrency(subtotal_price - discount_amount)),
+  };
 };
 
 // Configure Nodemailer
@@ -80,10 +150,11 @@ const sendEmail = (to, subject, text, html) => {
 exports.createOrder = async (req, res) => {
   try {
     // Owner is the authenticated user; client-supplied user_id/email are ignored.
-    // SECURITY (CWE-840): total_price is intentionally NOT read from req.body here.
-    // The stored total is always calculated server-side, below, from Product prices.
+    // SECURITY (CWE-840): total_price / discount fields are intentionally NOT read from
+    // req.body here. The stored total is always calculated server-side, below, from
+    // Product prices and a server-validated promo code.
     const user_id = req.user.id;
-    const { shipping_address, payment_method } = req.body;
+    const { shipping_address, payment_method, promo_code } = req.body;
     if (!shipping_address || !payment_method)
       return res.status(400).json({ message: "All fields are required" });
 
@@ -101,9 +172,9 @@ exports.createOrder = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     const email = user.email;
 
-    let serverTotal;
+    let pricing;
     try {
-      serverTotal = await calculateServerOrderTotal(cart.items);
+      pricing = await calculateServerOrderPricing(cart.items, user, promo_code);
     } catch (err) {
       if (err instanceof OrderValidationError) {
         return res.status(400).json({ message: err.message });
@@ -117,7 +188,11 @@ exports.createOrder = async (req, res) => {
         product_id: Number(item.product_id),
         quantity: item.quantity,
       })),
-      total_price: serverTotal,
+      subtotal_price: pricing.subtotal_price,
+      promo_code: pricing.promo_code,
+      discount_percent: pricing.discount_percent,
+      discount_amount: pricing.discount_amount,
+      total_price: pricing.total_price,
       shipping_address,
       status: "pending",
       payment_status: payment_method === "COD" ? "pending" : "paid",
@@ -178,6 +253,34 @@ exports.createOrder = async (req, res) => {
       .json({ message: "Order placed successfully", order: newOrder });
   } catch (error) {
     console.error("❌ createOrder Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// CHECKOUT QUOTE - the authenticated customer's cart priced exactly as createOrder would
+exports.getOrderQuote = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const { promo_code } = req.body;
+
+    const cart = await Cart.findOne({ user_id: Number(user_id) });
+    if (!cart || !cart.items.length)
+      return res.status(400).json({ message: "Cart is empty" });
+
+    const user = await User.findOne({ user_id: Number(user_id) });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    try {
+      const pricing = await calculateServerOrderPricing(cart.items, user, promo_code);
+      return res.status(200).json(pricing);
+    } catch (err) {
+      if (err instanceof OrderValidationError) {
+        return res.status(400).json({ message: err.message });
+      }
+      throw err;
+    }
+  } catch (error) {
+    console.error("❌ getOrderQuote Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

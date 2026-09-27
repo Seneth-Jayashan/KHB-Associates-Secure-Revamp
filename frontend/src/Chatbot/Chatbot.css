@@ -86,6 +86,8 @@
 /* Text styling */
 .message-text {
   @apply text-sm leading-relaxed;
+  white-space: pre-wrap; /* keep \n line breaks in plain-text messages */
+  overflow-wrap: anywhere;
 }
 
 .bot-message .message-text {
